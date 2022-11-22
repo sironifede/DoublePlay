@@ -1,10 +1,10 @@
-import 'Model.dart';
+import 'model.dart';
 
 class User  extends Model{
-  int? id;
+
   String username;
   String? email;
-  String? token;
+  String token;
   bool isSuperuser;
   bool isStaff;
   bool isActive;
@@ -12,22 +12,18 @@ class User  extends Model{
   DateTime? lastLogin;
 
   User(
-      {this.id,
+      {
+        int id = 0,
         this.email,
-        this.token,
+        this.token = "",
         this.username = "",
         this.isSuperuser = false,
         this.isStaff = false,
-        this.isActive = false,
+        this.isActive = true,
         this.dateJoined,
         this.lastLogin,
-      });
+      }):super(id: id);
 
-  // factory User.fromMap(Map<String, dynamic> data) => User(
-  //     id: data['id'],
-  //     username: data['email'],
-  //     token: data['token'],
-  // );
   Map<String, dynamic> toMapDB() {
     return {
       "id": 0,
@@ -36,31 +32,19 @@ class User  extends Model{
       "token": token,
     };
   }
-  Map<String, dynamic> toMap() {
+  @override
+  Map<String, dynamic> toUpdateMap() {
     return {
-      "id": id,
-      "username": username,
-      "email": email,
-      "token": token,
+      "id": id.toString(),
+      "username": username.toString(),
+      "email": email.toString(),
       "is_staff": isStaff.toString(),
       "is_active": isActive.toString(),
-      "is_superuser": isSuperuser.toString(),
+      //"is_superuser": isSuperuser.toString(),
     };
   }
 
-  factory User.fromMapDB(Map<String, dynamic> data) {
-
-    return User(
-      id: data["user_id"],
-      username: data["username"],
-      email: data["email"],
-      token: data["token"],
-      isActive: (data["is_active"] == 1)?true: false,
-      isSuperuser: (data["is_superuser"] == 1)?true: false,
-      isStaff: (data["is_staff"] == 1)?true: false,
-    );
-  }
-  factory User.fromMap(Map<String, dynamic> data){
+  factory User.fromMap(Map<String, dynamic> data) {
     String dateJoinedStr = (data["date_joined"] == null)? "": data["date_joined"];
     String lastLoginDate = (data["last_login"] == null)? "": data["last_login"];
     DateTime? dateJoined = (data["date_joined"] == null )? null :DateTime.utc(int.parse(dateJoinedStr.split("-")[0]),int.parse(dateJoinedStr.split("-")[1]),int.parse(dateJoinedStr.split("-")[2].split("T")[0]),int.parse(dateJoinedStr.split("-")[2].split("T")[1].split(":")[0]),int.parse(dateJoinedStr.split("-")[2].split("T")[1].split(":")[1]),int.parse(dateJoinedStr.split("-")[2].split("T")[1].split(":")[2].split(".")[0].replaceAll("Z", "")));
@@ -74,6 +58,19 @@ class User  extends Model{
       isStaff: data["is_staff"],
       dateJoined: dateJoined,
       lastLogin:lastLogin,
+    );
+  }
+
+  factory User.fromMapDB(Map<String, dynamic> data) {
+
+    return User(
+      id: data["user_id"],
+      username: data["username"],
+      email: data["email"],
+      token: data["token"],
+      isActive: (data["is_active"] == 1)?true: false,
+      isSuperuser: (data["is_superuser"] == 1)?true: false,
+      isStaff: (data["is_staff"] == 1)?true: false,
     );
   }
 }

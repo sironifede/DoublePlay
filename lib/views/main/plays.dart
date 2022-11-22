@@ -1,6 +1,8 @@
+import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../filters/filters.dart';
 import '../../filters/play.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
@@ -14,14 +16,15 @@ class PlaysPage extends StatefulWidget {
 
 class _PlaysPageState extends State<PlaysPage> {
 
+  int totalBet = 0;
   bool loading = true;
   bool filtering = false;
   bool addingModels = false;
   late ModelsManager mm;
-  User user = User();
+
   ModelOptions playModelOptions = ModelOptions(hasMore: false, page: 1);
 
-  bool selectingElements = false;
+  bool selectingElements = true;
   List<PlayElement> elements = [];
 
   List<String> months = <String>['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
@@ -29,35 +32,63 @@ class _PlaysPageState extends State<PlaysPage> {
   List<String> playTypes = <String>['', 'JS', 'JSA', 'JD', 'JDA'];
   String playType = '';
   PlayFilter playFilter = PlayFilter();
-  TextEditingController _dayController = TextEditingController();
-  TextEditingController _nightController = TextEditingController();
-  TextEditingController _dayControllerGT = TextEditingController();
-  TextEditingController _nightControllerGT = TextEditingController();
+  PadlockFilter padlockFilter = PadlockFilter();
+  TextEditingController _padlockId = TextEditingController();
+
   TextEditingController _betController = TextEditingController();
   TextEditingController _betControllerGT = TextEditingController();
 
+  void handleClick(String value) async {
+    switch (value) {
+      case "Seleccionar todo":
+        setState(() {
+          selectingElements = true;
+          bool selectAll = false;
+          for (var element in elements){
+            if (!element.selected){
+              selectAll = true;
+            }
+          }
+          for (var element in elements){
+            element.selected = selectAll;
+          }
+        });
+        break;
+      case "":
+        break;
+
+    }
+  }
   @override
   initState() {
     super.initState();
     mm = context.read<ModelsManager>();
-    Future.delayed(Duration(milliseconds: 1),() async {
-      user = mm.selectedUser!;
-      playFilter.user.value = user.id!.toString();
+    Future.delayed(const Duration(milliseconds: 1),() async {
+      padlockFilter.user.value =  mm.selectedUser.id.toString();
+      await mm.updatePadlocks(filter: padlockFilter ,user: mm.selectedUser);
+
       playModelOptions = await mm.updatePlays(filter: playFilter);
     });
   }
   void refresh() async {
+    await mm.updatePadlocks(filter: padlockFilter,user: mm.selectedUser);
     playModelOptions = await mm.updatePlays(filter: playFilter);
   }
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-
-    elements = [];
-    for (var play in mm.plays) {
-      elements.add(PlayElement(play: play));
+    if (!selectingElements){
+      elements = [];
     }
+    totalBet = 0;
+    for (var play in mm.plays) {
+      if (!selectingElements){
+        elements.add(PlayElement(play: play));
+      }
+      totalBet += play.bet;
+    }
+
     if (!loading) {
       if (filtering) {
         setState(() {
@@ -72,9 +103,10 @@ class _PlaysPageState extends State<PlaysPage> {
     }
 
 
+
     return Scaffold(
         appBar: AppBar(
-          title: Text("Administrar usuario"),
+          title: const Text("Jugadas"),
           actions: <Widget>[
             IconButton(
                 icon: const Icon(Icons.filter_alt),
@@ -86,19 +118,17 @@ class _PlaysPageState extends State<PlaysPage> {
                             builder: (context, StateSetter setState) {
                               return AlertDialog(
                                 scrollable: true,
-                                title: Text("Filtros"),
+                                title: const Text("Filtros"),
                                 content: Column(
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Expanded(child: Text("Mes de la jugada: ")),
+                                        const Expanded(child: Text("Mes de la jugada: ")),
                                         DropdownButton<String>(
                                           value: month,
                                           onChanged: (String? value) {
-                                            print("cambio");
-                                            // This is called when the user selects an item.
                                             setState(() {
                                               month = value!;
                                             });
@@ -114,7 +144,7 @@ class _PlaysPageState extends State<PlaysPage> {
                                     ),
                                     Row(
                                       children: [
-                                        Expanded(child: Text("Tipo de jugada:")),
+                                        const Expanded(child: Text("Tipo de jugada:")),
                                         DropdownButton<String>(
                                           value: playType,
                                           onChanged: (String? value) {
@@ -131,50 +161,6 @@ class _PlaysPageState extends State<PlaysPage> {
                                           }).toList(),
                                         ),
                                       ],
-                                    ),
-                                    TextField(
-                                      controller: _dayController,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.dayNumber.getLabelText,
-                                        hintText: playFilter.dayNumber.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
-                                    ),
-                                    TextField(
-                                      controller: _dayControllerGT,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.dayNumberGT.getLabelText,
-                                        hintText: playFilter.dayNumberGT.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
-                                    ),
-                                    TextField(
-                                      controller: _nightController,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.nightNumber.getLabelText,
-                                        hintText: playFilter.nightNumber.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
-                                    ),
-                                    TextField(
-                                      controller: _nightControllerGT,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.nightNumberGT.getLabelText,
-                                        hintText: playFilter.nightNumberGT.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
                                     ),
                                     TextField(
                                       controller: _betController,
@@ -198,12 +184,33 @@ class _PlaysPageState extends State<PlaysPage> {
                                         FilteringTextInputFormatter.digitsOnly
                                       ], // Only numbers can be entered
                                     ),
-                                    TimePickerDialog(initialTime: TimeOfDay.now())
+                                    ListTile(
+                                      title: const Text("Elegir un periodo para filtrar por fecha"),
+                                      subtitle: Text("${padlockFilter.creAtGt.value} | ${padlockFilter.creAtLt.value}"),
+                                      onTap: () async {
+                                        DateTimeRange? dateTimeRange;
+                                        if (padlockFilter.creAtGt.value != ""){
+                                          dateTimeRange = DateTimeRange(start: DateTime.parse(padlockFilter.creAtGt.value), end: DateTime.parse(padlockFilter.creAtLt.value));
+                                        }
+                                        dateTimeRange = await showDateRangePicker(context: context,initialDateRange: dateTimeRange, firstDate: DateTime(1900), lastDate: DateTime(2100));
+
+                                        if (dateTimeRange != null){
+                                          setState(() {
+                                            padlockFilter.creAtGt.value = dateTimeRange!.start.toString();
+                                            DateTime end = dateTimeRange.end;
+                                            end = end.add(const Duration(hours: 23, minutes: 59)) ;
+
+                                            padlockFilter.creAtLt.value = end.toString();
+                                          });
+
+                                        }
+                                      },
+                                    )
                                   ],
                                 ),
                                 actions: [
                                   TextButton(
-                                    child:Text("CANCELAR"),
+                                    child:const Text("CANCELAR"),
                                     onPressed: (){
 
                                       Navigator.of(context).pop();
@@ -211,22 +218,19 @@ class _PlaysPageState extends State<PlaysPage> {
                                   ),
                                   TextButton(
                                       onPressed: () async {
-                                        playFilter.month.value = month;
+
+                                        padlockFilter.month.value = month;
+                                        await mm.updatePadlocks(filter:padlockFilter ,user: mm.selectedUser);
                                         playFilter.type.value = playType;
-                                        playFilter.dayNumber.value = _dayController.text;
-                                        playFilter.dayNumberGT.value = _dayControllerGT.text;
-                                        playFilter.nightNumber.value = _nightController.text;
-                                        playFilter.nightNumberGT.value = _nightControllerGT.text;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
                                         filtering = true;
                                         mm.updatePlays(filter:playFilter).then((value) {
                                           playModelOptions = value;
-
                                         });
                                         Navigator.of(context).pop();
                                       },
-                                      child: Text("FILTRAR")
+                                      child: const Text("FILTRAR")
                                   )
                                 ],
                               );
@@ -236,22 +240,22 @@ class _PlaysPageState extends State<PlaysPage> {
                   );
                 }
             ),
-            /*(selectingElements)?IconButton(
+            (selectingElements)?IconButton(
                 icon: const Icon(Icons.delete),
                 onPressed: () async {
                   bool? result = await showDialog(context: context, builder: (_){
                     return AlertDialog(
-                      title: Text("¿Eliminar los usuarios seleccionados?"),
-                      content: Text("¿Estás seguro de que quieres eliminar los usuarios seleccionados?, no podra recuperarlos"),
+                      title: const Text("¿Eliminar los usuarios seleccionados?"),
+                      content: const Text("¿Estás seguro de que quieres eliminar los usuarios seleccionados?, no podra recuperarlos"),
                       actions: [
                         TextButton(
-                          child:Text("CANCELAR"),
+                          child:const Text("CANCELAR"),
                           onPressed: (){
                             Navigator.of(context).pop(false);
                           },
                         ),
                         TextButton(
-                          child:Text("ACEPTAR"),
+                          child:const Text("ACEPTAR"),
                           onPressed: (){
                             Navigator.of(context).pop(true);
                           },
@@ -262,27 +266,18 @@ class _PlaysPageState extends State<PlaysPage> {
                   });
                   if (result != null){
                     if (result){
-                      int cant = 0;
-                      print("eliminando usuarios");//TODO implements eliminar usuarios
-
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                            content: Text("Se han elimnado $cant usuarios")),
-                      );
-                      setState(() {
-                        selectingElements = false;
-                      });
+                      print("eliminando jugadas");//TODO implements eliminar usuarios
+                      removeElement(1);
                     }
                   }
                 }
-            ):*/IconButton(
+            ):IconButton(
                 icon: const Icon(Icons.refresh),
                 onPressed: (){
                   refresh();
                 }
             ),
-            /*PopupMenuButton<String>(
+            PopupMenuButton<String>(
               onSelected: handleClick,
               itemBuilder: (BuildContext context) {
                 return {"Seleccionar todo",}.map((String choice) {
@@ -292,7 +287,7 @@ class _PlaysPageState extends State<PlaysPage> {
                   );
                 }).toList();
               },
-            ),*/
+            ),
           ],
         ),
         body: SingleChildScrollView(
@@ -303,6 +298,39 @@ class _PlaysPageState extends State<PlaysPage> {
         ),
     );
   }
+  void removeElement(int cant){
+    var element;
+    for (element in elements){
+      if (element.selected){
+        break;
+      }
+    }
+    setState(() {
+      element.deleting = true;
+    });
+    mm.removePlay(model: element.play).then((v) {
+      elements.remove(element);
+      mm.plays.remove(element.play);
+      bool continueDeleting = false;
+      for (element in elements){
+        if (element.selected){
+          continueDeleting = true;
+          break;
+        }
+      }
+      if (continueDeleting) {
+        print("continuar eliminando");
+        cant = cant + 1;
+        removeElement(cant);
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Se han elimnado $cant jugadas")),
+        );
+        refresh();
+      }
+    });
+  }
   List<Widget> getList(){
     List<Widget> list = [];
     if (loading){
@@ -310,17 +338,23 @@ class _PlaysPageState extends State<PlaysPage> {
     }
     list.add(
         ListTile(
-          leading: Icon(Icons.person),
-          title: Text(user.username),
-          subtitle: Text("${(user.isSuperuser)? "Superusuario": (user.isStaff)?"Admin": "Listero"}"),
+          leading: const Icon(Icons.person),
+          title: Text(mm.selectedUser.username),
+          subtitle: Text("${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin": "Listero"}"),
         )
     );
 
     if (elements.isNotEmpty){
       list.add(
-          ListTile(
-            leading: const Text(""),
-            title: Text('Jugadas',style: TextStyle(color: Theme.of(context).primaryColor),),
+          const ListTile(
+            leading: Text(""),
+            title: Text('Jugadas'),
+          )
+      );
+      list.add(
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
           )
       );
     }else{
@@ -331,14 +365,37 @@ class _PlaysPageState extends State<PlaysPage> {
           )
       );
       list.add(
-          Center(
+          const Center(
               child:Icon(Icons.warning)
           )
       );
     }
+
+    list.add(
+      TextField(
+          enabled: !loading,
+          controller: _padlockId,
+          decoration: InputDecoration(
+              labelText: "Nro. de confirmacion",
+              hintText: "Numero de confirmacion",
+              icon: const Icon(Icons.numbers),
+              suffixIcon:  IconButton(
+                icon: const Icon( Icons.search),
+                onPressed: () async {
+                  filtering = true;
+                  playFilter.padlock.value = _padlockId.text;
+                  await mm.updatePadlocks(filter: padlockFilter ,user: mm.selectedUser);
+                  mm.updatePlays(filter:playFilter).then((value) {
+                    playModelOptions = value;
+                  });
+                },
+              )
+          )
+      ),
+    );
     if (filtering){
       list.add(
-          ListTile(
+          const ListTile(
             leading: CircularProgressIndicator(),
             title: Text('Filtrando jugadas'),
           )
@@ -354,16 +411,18 @@ class _PlaysPageState extends State<PlaysPage> {
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: PlayWidget(
-            play: element.play,
+            element: element,
             onTap: () {
               if (selectingElements) {
                 setState(() {
                   element.selected = !element.selected;
                 });
-              } else {
+              }else{
+                mm.padlock = element.play.padlock;
+                Navigator.of(context).pushNamed(Routes.padlock);
               }
             },
-            onLongPress: () {
+            onLongPress:(mm.user.isSuperuser || mm.user.isStaff)? () {
               if (!selectingElements) {
                 setState(() {
                   selectingElements = true;
@@ -372,18 +431,24 @@ class _PlaysPageState extends State<PlaysPage> {
               setState(() {
                 element.selected = !element.selected;
               });
-            },
-            selected: element.selected,
+            }: null,
             selectingElements: selectingElements,
           ),
         ),
       );
 
     }
+    if (!isSelectingElements && selectingElements){
+      Future.delayed(const Duration(milliseconds: 1),(){
+        setState(() {
+          selectingElements = false;
+        });
+      });
+    }
     if (playModelOptions.hasMore){
       if (addingModels){
         list.add(
-          Center(
+          const Center(
             child: CircularProgressIndicator()
           )
         );
@@ -402,48 +467,42 @@ class _PlaysPageState extends State<PlaysPage> {
         );
       }
     }
-    if (!isSelectingElements && selectingElements){
-      Future.delayed(Duration(milliseconds: 1),(){
-        setState(() {
-          selectingElements = false;
-        });
-      });
-    }
+
 
 
     list.add(const Divider());
     list.add(
         ListTile(
-            leading:Icon(Icons.info_outline),
+            leading:const Icon(Icons.info_outline),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                     children: [
-                      Text("-Toca en "),
-                      Icon(Icons.filter_alt),
-                      Text(" para filtrar las jugadas")
+                      const Text("-Toca en "),
+                      const Icon(Icons.filter_alt),
+                      const Text(" para filtrar las jugadas")
                     ]
                 ),
                 Row(
                   children: [
-                    Text("-Este circulo "),
+                    const Text("-Este circulo "),
                     Container(
                       width: 30,
                       height: 30,
                       decoration: BoxDecoration(
-                          color: Colors.amber,
+                          color: Colors.red,
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Text(""),
+                      child: const Text(""),
                     ),
-                    Text(" es el numero de dia")
+                    const Text(" es el numero de dia")
                   ],
                 ),
                 Row(
                   children: [
-                    Text("-Este circulo "),
+                    const Text("-Este circulo "),
                     Container(
                       width: 30,
                       height: 30,
@@ -452,14 +511,14 @@ class _PlaysPageState extends State<PlaysPage> {
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Text(""),
+                      child: const Text(""),
                     ),
-                    Text(" es el numero de noche")
+                    const Text(" es el numero de noche")
                   ],
                 ),
                 Row(
                   children: [
-                    Text("-Este circulo "),
+                    const Text("-Este circulo "),
                     Container(
                       width: 30,
                       height: 30,
@@ -468,9 +527,9 @@ class _PlaysPageState extends State<PlaysPage> {
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Center(child: Text("\$")),
+                      child: const Center(child: Text("\$")),
                     ),
-                    Text(" es el dinero de la apuesta")
+                    const Text(" es el dinero de la apuesta")
                   ],
                 ),
               ],
@@ -484,82 +543,92 @@ class _PlaysPageState extends State<PlaysPage> {
 class PlayElement {
   final Play play;
   bool selected;
+  bool deleting = false;
   PlayElement({required this.play, this.selected = false});
 }
 class PlayWidget extends StatelessWidget {
-  const PlayWidget({required this.play, required this.onTap, this.onLongPress, this.selected = false, this.selectingElements = false});
-  final Play play;
+  const PlayWidget({required this.element, required this.onTap, this.onLongPress, this.selectingElements = false});
+  final PlayElement element;
   final void Function()? onLongPress;
   final void Function()? onTap;
-  final bool selected;
   final bool selectingElements;
   @override
   Widget build(BuildContext context){
     return Card(
-      child: Column(
-        crossAxisAlignment:CrossAxisAlignment.start,
-        children: [
-          ListTile(
-              title: Text("Para el mes: ${play.month}"),
-            subtitle: Text("Tipo de jugada: ${play.type.name}"),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: Center(
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                        color: Colors.amber,
-                        borderRadius: BorderRadius.circular(60)
-                      //more than 50% of width makes circle
+      child: ListTile(
+        selected: element.selected,
+        onLongPress: onLongPress,
+        onTap: onTap,
+        title: Column(
+          crossAxisAlignment:CrossAxisAlignment.start,
+          children: [
+            ListTile(
+              leading: (selectingElements)?(element.deleting)?const CircularProgressIndicator():Checkbox(
+                value: element.selected,
+                onChanged: (b){}
+              ):null,
+              title: Text("Para el mes: ${element.play.padlock.month}"),
+              subtitle: Text("Tipo de jugada: ${element.play.type?.name}"),
+              trailing: Text("#${element.play.padlock.id.toString().padLeft(8, '0')}"),
+            ),
+            (element.deleting)?const Text("Eliminando jugada..."): const Text(""),
+            Row(
+              children: [
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(60)
+                        //more than 50% of width makes circle
+                      ),
+                      child: Center(child: Text("${element.play.dayNumber}")),
                     ),
-                    child: Center(child: Text("${play.dayNumber}")),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.circular(60)
-                      //more than 50% of width makes circle
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(60)
+                        //more than 50% of width makes circle
+                      ),
+                      child: Center(child: Text("${element.play.nightNumber}")),
                     ),
-                    child: Center(child: Text("${play.nightNumber}")),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Center(
-                  child: Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(60)
-                      //more than 50% of width makes circle
+                Expanded(
+                  child: Center(
+                    child: Container(
+                      width: 60,
+                      height: 60,
+                      decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(60)
+                        //more than 50% of width makes circle
+                      ),
+                      child: Center(child: Text("${element.play.bet}\$")),
                     ),
-                    child: Center(child: Text("${play.bet}\$")),
                   ),
                 ),
-              ),
 
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child:  Text("Realizada: ${(play.createdAt == null)? "No se sabe": play.createdAt!.toLocal().toString().split(".")[0]}"),
-          )
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": element.play.createdAt!.toLocal().toString().split(".")[0]}"),
+            )
 
-        ],
+          ],
+        ),
       )
 
-      /*onLongPress: onLongPress,
-      onTap: onTap,*/
+
     );
   }
 }

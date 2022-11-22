@@ -1,4 +1,3 @@
-import 'package:bolita_cubana/repository/user_repository.dart';
 import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:bolita_cubana/themes/themes.dart';
 import 'package:bolita_cubana/views/views.dart';
@@ -25,14 +24,13 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyApp extends State<MyApp> {
-  UserRepository userRepository = UserRepository();
 
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return ThemeModeHandler(
         manager: MyManager(),
-        placeholderWidget: Center(
+        placeholderWidget: const Center(
             child: CircularProgressIndicator()
         ),
         builder: (ThemeMode themeMode) {
@@ -45,20 +43,7 @@ class _MyApp extends State<MyApp> {
             themeMode: themeMode,
             initialRoute: "/",
             onGenerateRoute: RouteGenerator.generateRoute,
-            home: FutureBuilder<bool>(
-                future: userRepository.hasToken(id: 0),
-                builder: (context,snapshot) {
-
-                  if (snapshot.hasData){
-                    if (snapshot.data!){
-                      return HomePage();
-                    }else{
-                      return WelcomePage();
-                    }
-                  }
-                  return CircularProgressIndicator();
-                }
-            ),
+            home: const WelcomePage(),
           );
         }
     );

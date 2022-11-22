@@ -8,14 +8,14 @@ import '../../models/models_manager.dart';
 import '../../routes/route_generator.dart';
 import '../views.dart';
 
-class UsersPage extends StatefulWidget {
-  const UsersPage({Key? key}) : super(key: key);
+class CollectorsPage extends StatefulWidget {
+  const CollectorsPage({Key? key}) : super(key: key);
 
   @override
-  State<UsersPage> createState() => _UsersPageState();
+  State<CollectorsPage> createState() => _CollectorsPageState();
 }
 
-class _UsersPageState extends State<UsersPage> {
+class _CollectorsPageState extends State<CollectorsPage> {
   bool loading = true;
   bool filtering = false;
   bool addingModels = false;
@@ -24,9 +24,7 @@ class _UsersPageState extends State<UsersPage> {
   late ModelsManager mm;
   ModelOptions userModelOptions = ModelOptions(hasMore: false, page: 1);
 
-  TextEditingController _usernameController = TextEditingController();
-  List<String> userTypes = <String>['Admins', 'Superusuarios', 'Listeros'];
-  String userType = 'Listeros';
+  TextEditingController _nameController = TextEditingController();
   UserFilter userFilter = UserFilter(isStaff: false, isSuperUser: false);
 
   void handleClick(String value) async {
@@ -99,28 +97,11 @@ class _UsersPageState extends State<UsersPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   TextField(
-                                    controller: _usernameController,
+                                    controller: _nameController,
                                     decoration: const InputDecoration(
                                       labelText: "Nombre de usuario",
                                       hintText: "Nombre de usuario",
                                     ),
-                                  ),
-                                  DropdownButton<String>(
-                                    value: userType,
-                                    onChanged: (String? value) {
-                                      // This is called when the user selects an item.
-                                      setState(() {
-                                        userType = value!;
-                                      });
-                                    },
-                                    items: userTypes.map<
-                                        DropdownMenuItem<String>>((
-                                        String value) {
-                                      return DropdownMenuItem<String>(
-                                        value: value,
-                                        child: Text(value),
-                                      );
-                                    }).toList(),
                                   ),
                                 ],
                               ),
@@ -133,25 +114,10 @@ class _UsersPageState extends State<UsersPage> {
                                 ),
                                 TextButton(
                                     onPressed: () async {
-                                      if (userType == userTypes[0]) {
-                                        userFilter.isStaff.value = true;
-                                        userFilter.isSuperUser.value = false;
-                                        print(userFilter.getFilterStr());
-                                      } else if (userType == userTypes[1]) {
-                                        userFilter.isStaff.value = true;
-                                        userFilter.isSuperUser.value = true;
-                                        print(userFilter.getFilterStr());
-                                      } else {
-                                        userFilter.isStaff.value = false;
-                                        userFilter.isSuperUser.value = false;
-                                        print(userFilter.getFilterStr());
-                                      }
                                       selectingElements = false;
-                                      userFilter.username.value =
-                                          _usernameController.text;
                                       filtering = true;
                                       Navigator.of(context).pop();
-                                      userModelOptions = await mm.updateUsers(filter: userFilter);
+                                      //userModelOptions = await mm.updateUsers(filter: userFilter);
 
                                     },
                                     child: Text("FILTRAR")

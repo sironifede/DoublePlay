@@ -14,14 +14,14 @@ class UserPage extends StatefulWidget {
 class _UserPageState extends State<UserPage> {
   bool left = false;
   late ModelsManager mm;
-  User user = User();
+
 
   @override
   initState() {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      user = mm.selectedUser!;
+
     });
   }
   @override
@@ -54,17 +54,32 @@ class _UserPageState extends State<UserPage> {
     }else {
       list.add(
           ListTile(
-            title: Text('Usuario: ${user.username}'),
+            title: Text('Usuario: ${mm.selectedUser.username}'),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children:[
-                Text("Tipo de usuario: ${(user.isSuperuser)? "Superusuario": (user.isStaff)?"Admin": "Listero"}"),
-                Text("Cuenta creada el: ${(user.dateJoined== null)?"No se sabe": user.dateJoined!.toLocal().toString().split(".")[0]}"),
-                Text("Ultimo inicio de sesion: ${(user.lastLogin== null)?"No se sabe": user.lastLogin!.toLocal().toString().split(".")[0]}"),
+                Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin": "Listero"}"),
+                Text("Cuenta creada el: ${(mm.selectedUser.dateJoined== null)?"No se sabe": mm.selectedUser.dateJoined!.toLocal().toString().split(".")[0]}"),
+                Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin== null)?"No se sabe": mm.selectedUser.lastLogin!.toLocal().toString().split(".")[0]}"),
               ]
             ),
           )
       );
+      if (mm.user.isSuperuser || (mm.user.isStaff && !mm.user.isSuperuser && !mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser)){
+        list.add(
+            CheckboxListTile(
+                title: Text('Usuario activo: '),
+                subtitle: Text(
+                    "Asi puedes negarle el acceso para que no pueda entrar a la app"),
+
+                onChanged: (e) {
+                  mm.selectedUser.isActive = !mm.selectedUser.isActive;
+                  mm.updateUser(model: mm.selectedUser);
+                },
+                value: mm.selectedUser.isActive
+            )
+        );
+      }
 
 
       list.add(Divider());
@@ -76,7 +91,7 @@ class _UserPageState extends State<UserPage> {
       list.add(
           ElevatedButton(
               onPressed: (){
-                mm.selectUser(user);
+                mm.selectUser(mm.selectedUser);
                 Navigator.of(context).pushNamed(Routes.plays);
               },
               child: SizedBox(
@@ -85,16 +100,7 @@ class _UserPageState extends State<UserPage> {
               )
           )
       );
-      list.add(
-          ElevatedButton(
-              onPressed: null,
-              child: SizedBox(
-                  width:MediaQuery.of(context).size.width/3,
-                  child: Center(child: Text("Revisar"))
-              )
-          )
-      );
-      if (mm.user!.isSuperuser || (mm.user!.isStaff && !user.isSuperuser && !user.isStaff) || (user == mm.user)){
+      /*if (mm.user.isSuperuser || (mm.user.isStaff && !mm.selectedUser.isSuperuser && !mm.selectedUser.isStaff) || (user == mm.user)){
         list.add(
             ElevatedButton(
                 onPressed: null,
@@ -104,12 +110,14 @@ class _UserPageState extends State<UserPage> {
                 )
             )
         );
-      }
-      if (user == mm.user){
+      }*/
+
+      if (mm.selectedUser == mm.user){
+        print("si es el mismmoooooooooooooooo");
         list.add(
             ElevatedButton(
                 onPressed: () async {
-                  await mm.userRepository.deleteToken(id: 0);
+                  mm.user = User();
                   Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
                 },
                 child: SizedBox(
@@ -119,7 +127,7 @@ class _UserPageState extends State<UserPage> {
             )
         );
       }
-      if (!((!mm.user!.isSuperuser && (user.isSuperuser || user.isStaff))&& user != mm.user!)) {
+      if (!((!mm.user.isSuperuser && (mm.selectedUser.isSuperuser || mm.selectedUser.isStaff))&& mm.selectedUser != mm.user)) {
         list.add(
             ElevatedButton(
                 onPressed: () async {
@@ -147,9 +155,9 @@ class _UserPageState extends State<UserPage> {
                       });
                   if (confirmDelete != null) {
                     if (confirmDelete) {
-                      bool sameUser = await mm.removeUser(userToDelete: user);
+                      bool sameUser = await mm.removeUser(model: mm.selectedUser);
                       if (sameUser) {
-                        await mm.userRepository.deleteToken(id: 0);
+                        mm.user = User();
                         Navigator.of(context).pushNamedAndRemoveUntil(
                             Routes.welcome, (Route<dynamic> route) => false);
                       }

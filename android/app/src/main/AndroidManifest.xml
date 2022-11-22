@@ -2,7 +2,7 @@
     package="com.example.bolita_cubana">
     <uses-permission android:name="android.permission.INTERNET"/>
    <application
-        android:label="bolita_cubana"
+        android:label="Double Play"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

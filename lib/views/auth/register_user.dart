@@ -1,3 +1,5 @@
+// ignore_for_file: depend_on_referenced_packages, body_might_complete_normally_nullable
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/models_manager.dart';
@@ -18,7 +20,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
   String _errorUsername = "";
   String _errorPassword = "";
   String _errorPassword2 = "";
-  List<String> userTypes = <String>['Listero', 'Admin'];
+  List<String> userTypes = <String>['Listero'];
   String userType = 'Listero';
 
   bool loading = false;
@@ -31,9 +33,10 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      if (mm.user!.isSuperuser) {
+      if (mm.user.isSuperuser) {
         setState(() {
           userTypes.add('Superusuarios');
+          userTypes.add('Admin');
         });
       }
     });
@@ -62,25 +65,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  TextFormField(
-                      enabled: !loading,
-                      validator:(val){
-                        if(val == null || val == "" ) {
-                          return "Campo obligatorio";
-                        }
-                        if (_errorUsername != ''){
-                          return _errorUsername;
-                        }
-                      },
-                      controller: usernameController,
-                      decoration: InputDecoration(
-                        labelText: "Usuario",
-                        hintText: "Nombre de usuario",
-                        icon: Icon(Icons.person),
-                      )
-                  ),
                   ListTile(
-                    leading: Text(""),
                     title: Row(
                       children: [
                         Text("Tipo de usuario:"),
@@ -103,6 +88,24 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                       ],
                     ),
                   ),
+                  TextFormField(
+                      enabled: !loading,
+                      validator:(val){
+                        if(val == null || val == "" ) {
+                          return "Campo obligatorio";
+                        }
+                        if (_errorUsername != ''){
+                          return _errorUsername;
+                        }
+                      },
+                      controller: usernameController,
+                      decoration: InputDecoration(
+                        labelText: "Usuario",
+                        hintText: "Nombre de usuario",
+                        icon: Icon(Icons.person),
+                      )
+                  ),
+
 
                   TextFormField(
                       enabled: !loading,
@@ -114,12 +117,21 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                           return _errorPassword;
                         }
                       },
+
                       controller: passwordController,
                       obscureText: obscure,
                       decoration: InputDecoration(
                         labelText: "Contraseña",
                         hintText: "Contraseña del usuario",
                         icon: Icon(Icons.vpn_key_sharp),
+                        suffixIcon:  IconButton(
+                          icon: Icon((obscure)?Icons.remove_red_eye_outlined: Icons.remove_red_eye),
+                          onPressed: (){
+                            setState(() {
+                              obscure = !obscure;
+                            });
+                          },
+                        )
                       )
                   ),
                   TextFormField(
@@ -140,16 +152,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                         icon: Icon(Icons.vpn_key_sharp),
                       )
                   ),
-                  CheckboxListTile(
-                    title: Text("Mostrar contraseña"),
-                    onChanged: (b){
-                      setState(() {
-                        obscure = !obscure;
-                      });
-                    },
-                    value: !obscure,
 
-                  ),
                   Container(height:16),
                   ElevatedButton.icon(
                     icon: (loading)? CircularProgressIndicator(): Container(),
@@ -172,6 +175,28 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                         mm.registerUser(username: usernameController.text, isSuperuser: isSuperuser, isStaff: isStaff, password: passwordController.text, password2: password2Controller.text)
                             .then((value) {
                           mm.status = ModelsStatus.updated;
+                          showDialog(
+                              context: context,
+                              builder: (_) {
+                                return AlertDialog(
+                                  icon: const Icon(Icons.check),
+                                  title: Text("El usuario '${usernameController.text}' ha sido creado."),
+                                  actions: [
+                                    TextButton(
+                                      child: Text("CERRAR"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop(true);
+                                      },
+                                    ),
+                                    TextButton(
+                                      child: Text("ACEPTAR"),
+                                      onPressed: () {
+                                        Navigator.of(context).pop(true);
+                                      },
+                                    ),
+                                  ],
+                                );
+                              });
                           //Navigator.of(context).pushNamed(Routes., (Route<dynamic> route) => false);
                         }, onError: (error) {
                           setState(() {

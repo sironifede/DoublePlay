@@ -23,7 +23,6 @@ class _AppPageState extends State<AppPage> {
 
   @override
   Widget build(BuildContext context) {
-    print(mm.status);
     mm = context.watch<ModelsManager>();
     return Scaffold(
         appBar: AppBar(
@@ -73,7 +72,7 @@ class _AppPageState extends State<AppPage> {
           leading: Icon(Icons.watch_later),
           title: Text("${mm.app.stopHour.format(context)}"),
           onTap: () async {
-            TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+            TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour);
             if (timePicked != null){
               mm.app.stopHour = timePicked;
               mm.updateApp();

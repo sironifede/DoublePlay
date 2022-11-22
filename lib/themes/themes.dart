@@ -6,28 +6,12 @@ CustomTheme currentTheme = CustomTheme();
 
 class CustomTheme extends ChangeNotifier{
   static ThemeData get lightTheme {
-    return ThemeData(
-      brightness: Brightness.light,
-      primaryColor: Color(0xFFC65F00),
-      colorScheme: ColorScheme.fromSwatch().copyWith(
-          brightness: Brightness.light,
-          primary: Color(0xFFC65F00),
-          secondary:Color(0xFF67BC00),
-          surface: Colors.white
-      ),
+    return ThemeData.light(
+
     );
   }
   static ThemeData get darkTheme {
-    return ThemeData(
-      brightness: Brightness.dark,
-      primaryColor: Color(0xFFC65F00),
-      colorScheme: ColorScheme.fromSwatch().copyWith(
-        brightness: Brightness.dark,
-        primary: Color(0xFFC65F00),
-        secondary: Color(0xFF67BC00),
-        surface:  Color(0xFF2B2B2B),
-        onSurface: Color(0xFFFFFFFF),
-      ),
+    return ThemeData.dark(
     );
   }
 }

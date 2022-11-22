@@ -5,8 +5,8 @@ class UserLogin {
   UserLogin({required this.username, required this.password});
 
   Map <String, dynamic> toJson() => {
-    "username": this.username,
-    "password": this.password
+    "username": username,
+    "password": password
   };
 }
 
@@ -23,7 +23,7 @@ class Token{
 
   Map<String, dynamic> toJson() {
     return {
-      "token": this.token,
+      "token": token,
     };
   }
 }

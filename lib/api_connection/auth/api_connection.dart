@@ -38,7 +38,7 @@ Future<Map<String,dynamic>> postUser({required User user,required UserSignUp use
   final http.Response response = await http.post(
     registerUri,
     headers: <String, String>{
-      'Authorization': 'token ${user.token!}',
+      'Authorization': 'token ${user.token}',
       'Content-Type': 'application/json; charset=UTF-8',
     },
     body: jsonEncode(userSignUp.toJson()),
