@@ -46,6 +46,12 @@ class _PlayPageState extends State<PlayPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async{
+      await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
+      mm.plays = [];
+      for (var padlock in mm.padlocks) {
+        await mm.updatePlays(
+            filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
+      }
       if (!mm.firstPlay){
         setState(() {
           mm.firstPlay = false;
@@ -70,7 +76,7 @@ class _PlayPageState extends State<PlayPage> {
       int spBet = 0;
       int dpBet = 0;
       for (var play in mm.plays){
-        if (play.padlock.id == mm.padlock.id) {
+        if (play.padlock.user.id == mm.padlock.user.id && play.padlock.month == mm.padlock.month) {
 
           if (play.confirmed) {
 
@@ -83,10 +89,10 @@ class _PlayPageState extends State<PlayPage> {
         }
       }
 
-      int maxBet = 300;
+      int maxBet = 200;
       int totalBet = dpBet;
       if (mm.play.type == PlayType.JS || mm.play.type == PlayType.JSA){
-        maxBet = 200;
+        maxBet = 100;
         totalBet = spBet;
       }
       //print("totalBet: ${totalBet}");
@@ -193,22 +199,63 @@ class _PlayPageState extends State<PlayPage> {
 
   }
 
-  resetScreen(){
+  resetScreen() async{
     dayNumberPicked = false;
     nightNumberPicked = false;
     betNumberPicked = false;
     random = false;
+
     mm.updateDisabledNumbers();
     mm.updateDisabledBets();
-    mm.updatePadlocks();
+    await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
+    mm.plays = [];
+    for (var padlock in mm.padlocks) {
+      await mm.updatePlays(
+          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
+    }
   }
 
 
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    if (mm.showActiveAppDialog){
-      mm.showActiveAppDialog = false;
+    if (mm.user.userStatus == UserStatus.unauthorized){
+      mm.user.userStatus = UserStatus.unauthenticated;
+      Future.delayed(Duration(milliseconds:1), (){
+        showDialog(
+            context: context,
+            builder: (_) {
+              return AlertDialog(
+                icon: const Icon(Icons.warning),
+                title: Text("Tu usuario ha sido deshabilitado o eliminado no puedes acceder a la app hasta que se te permita por un admin."),
+                actions: [
+                  TextButton(
+                    child: Text("CERRAR SESION"),
+                    onPressed: () {
+                      Navigator.of(context).pop(true);
+                    },
+                  ),
+                  TextButton(
+                    child: Text("ACEPTAR"),
+                    onPressed: () {
+                      SystemNavigator.pop();
+
+                    },
+                  ),
+                ],
+              );
+            }).then((value){
+          if (value != null){
+            if (value){
+              Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
+            }
+          }else{
+            SystemNavigator.pop();
+          }
+        });
+      });
+    }else if (mm.user.userStatus == UserStatus.appNotActive) {
+      mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds: 1), () {
         showDialog(
             context: context,
@@ -238,7 +285,6 @@ class _PlayPageState extends State<PlayPage> {
             }).then((value) {
           if (value != null){
             if (value){
-              mm.user = User();
               Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
             }
           }else{
@@ -248,15 +294,12 @@ class _PlayPageState extends State<PlayPage> {
       });
     }
 
-
-
     for (var j in mm.disabledBets) {
       if (j.month == mm.padlock.month) {
         prices = prices.toSet().difference(j.betNumbers.toSet()).toList();
         break;
       }
     }
-
 
     for (var i in mm.disabledNumbers) {
       if (i.month == mm.padlock.month) {
@@ -277,11 +320,6 @@ class _PlayPageState extends State<PlayPage> {
         }
       }
     }
-
-
-
-
-
 
     return Scaffold(
       appBar: AppBar(

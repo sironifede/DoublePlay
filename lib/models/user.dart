@@ -1,7 +1,14 @@
 import 'model.dart';
 
-class User  extends Model{
+enum UserStatus {
+  unauthenticated,
+  authenticated,
+  unauthorized,
+  appNotActive
 
+}
+
+class User  extends Model{
   String username;
   String? email;
   String token;
@@ -10,6 +17,7 @@ class User  extends Model{
   bool isActive;
   DateTime? dateJoined;
   DateTime? lastLogin;
+  UserStatus userStatus;
 
   User(
       {
@@ -22,6 +30,7 @@ class User  extends Model{
         this.isActive = true,
         this.dateJoined,
         this.lastLogin,
+        this.userStatus = UserStatus.unauthenticated
       }):super(id: id);
 
   Map<String, dynamic> toMapDB() {

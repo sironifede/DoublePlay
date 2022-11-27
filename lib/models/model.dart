@@ -4,7 +4,7 @@ import 'package:bolita_cubana/models/models.dart';
 import 'package:bolita_cubana/views/views.dart';
 import 'package:flutter/material.dart';
 
-enum Models{
+enum ModelType{
    disabledNumbers,
   disabledBets,
   play,
@@ -12,7 +12,6 @@ enum Models{
   user,
   collector,
   app
-
 }
 
 class Model{
@@ -27,28 +26,28 @@ class Model{
   Map<String, dynamic> toCreateMap() {
     return {};
   }
-  factory Model.fromMap(Map<String, dynamic> data, Models models,{Padlock? padlock, User? user}){
+  factory Model.fromMap(Map<String, dynamic> data, ModelType models,{Padlock? padlock, User? user}){
     switch(models){
 
-      case Models.disabledNumbers:
+      case ModelType.disabledNumbers:
         return DisabledNumbers.fromMap(data);
 
-      case Models.play:
+      case ModelType.play:
         return Play.fromMap(data, padlock!);
 
-      case Models.padlock:
+      case ModelType.padlock:
         return Padlock.fromMap(data, user!);
 
-      case Models.user:
+      case ModelType.user:
         return User.fromMap(data);
 
-      case Models.app:
+      case ModelType.app:
         return App.fromMap(data);
 
-      case Models.collector:
+      case ModelType.collector:
         return Collector.fromMap(data);
 
-      case Models.disabledBets:
+      case ModelType.disabledBets:
         return DisabledBets.fromMap(data);
     }
   }

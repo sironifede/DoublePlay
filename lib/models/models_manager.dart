@@ -38,9 +38,7 @@ class ModelsManager with ChangeNotifier {
   Collector selectedCollector = Collector(id: 0, listers:  [], name: "");
   App app = App(active: false, stopHour: TimeOfDay.now());
 
-  bool showActiveAppDialog = false;
   bool showContinuePlayingDialog = false;
-  bool showedActiveAppDialog = false;
 
   Future<User> authenticateUser({required String username, required String password}) async {
     status = ModelsStatus.updating;
@@ -52,16 +50,16 @@ class ModelsManager with ChangeNotifier {
         username: username,
         token: token.token, isSuperuser: false, isStaff: false, isActive: true,
       );
+      user.userStatus = UserStatus.authenticated;
       await fetchUser();
-      if (!(user.isStaff || user.isSuperuser)) {
-        await getApp();
-        if (!app.active) {
-          showActiveAppDialog = true;
-          throw Exception("App is not active");
-        }
+      print(user.userStatus);
+      if (user.userStatus == UserStatus.appNotActive) {
+
+        throw "App not active";
       }
+      user.userStatus = UserStatus.authenticated;
     }catch (e){
-      print(e);
+
       status = ModelsStatus.updated;
       notifyListeners();
       throw e;
@@ -77,20 +75,18 @@ class ModelsManager with ChangeNotifier {
     try {
       UserSignUp userSignUp = UserSignUp(username: username, isStaff: isStaff, isSuperuser: isSuperuser,password:password,password2:password2);
       Map<String,dynamic> map = await postUser(user: user, userSignUp: userSignUp);
-      status = ModelsStatus.updated;
-      notifyListeners();
     }catch (e){
-      status = ModelsStatus.updated;
-      notifyListeners();
       throw e;
     }
+    status = ModelsStatus.updated;
+    notifyListeners();
   }
   Future<ModelOptions> updateUsers({Filter? filter, bool loadMore = false, int page = 1}) async {
     status = ModelsStatus.updating;
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",models: Models.user);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
       fetchedModels = await modelsApi.getModels(filter: filter, page: page);
       if (loadMore){
         for (var model in fetchedModels.models){
@@ -101,10 +97,10 @@ class ModelsManager with ChangeNotifier {
         for (var model in fetchedModels.models){
           users.add(model as User);
         }
-        //users = fetchedModels.models as List<User>;
       }
     }catch (e){
-      users = [];
+
+      await updateUserStatus(e);
       print("updateUsers $e");
     }
     status = ModelsStatus.updated;
@@ -115,15 +111,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",models: Models.user);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
       selectedUser = await modelsApi.putModel(id:model.id,model: model) as User;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateUser $e");
     }
     status = ModelsStatus.updated;
@@ -134,12 +125,13 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",models: Models.user);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
       await modelsApi.deleteModel(id: model.id);
       if (user == model) {
         sameUser = true;
       }
     }catch (e){
+      await updateUserStatus(e);
       print("removeUser $e");
     }
     status = ModelsStatus.updated;
@@ -152,8 +144,8 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",models: Models.play);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelFr: Models.padlock, modelsFr: padlocks);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
+      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.padlock, modelsFr: padlocks);
       if (loadMore){
         for (var model in fetchedModels.models){
           plays.add(model as Play);
@@ -166,12 +158,7 @@ class ModelsManager with ChangeNotifier {
       }
     }catch (e){
       plays = [];
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updatePlays $e");
     }
     status = ModelsStatus.updated;
@@ -182,15 +169,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",models: Models.play);
-      play = await modelsApi.putModel(id: model.id, model: model,modelsFr: padlocks, modelFr: Models.padlock) as Play;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
+      play = await modelsApi.putModel(id: model.id, model: model,modelsFr: padlocks, modelTypeFr: ModelType.padlock) as Play;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updatePlay $e");
     }
     status = ModelsStatus.updated;
@@ -200,15 +182,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",models: Models.play);
-      play = await modelsApi.postModel(model: model, modelsFr: padlocks, modelFr: Models.padlock) as Play;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
+      play = await modelsApi.postModel(model: model, modelsFr: padlocks, modelTypeFr: ModelType.padlock) as Play;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("createPlay $e");
     }
     status = ModelsStatus.updated;
@@ -219,9 +196,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",models: Models.play);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
       await modelsApi.deleteModel(id: model.id);
     }catch (e){
+      await updateUserStatus(e);
       print("updatePlays $e");
     }
     status = ModelsStatus.updated;
@@ -230,60 +208,27 @@ class ModelsManager with ChangeNotifier {
   }
 
 
-  Future<ModelOptions> updatePadlocks({Filter? filter, bool loadMore = false, int page = 1, User? user,bool change = true}) async {
+  Future<ModelOptions> updatePadlocks({Filter? filter, bool loadMore = false, int page = 1,required User userFr,bool change = true}) async {
     status = ModelsStatus.updating;
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: this.user.token, modelString: "padlocks",models: Models.padlock);
-      if (user == null){
-        fetchedModels = await modelsApi.getModels(filter: PadlockFilter(user:this.user.id.toString()), page: page, modelFr: Models.user, modelsFr: [this.user]);
+      ModelsApi modelsApi = ModelsApi(token: this.user.token, modelString: "padlocks",modelType: ModelType.padlock);
+      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.user, modelsFr: [userFr]);
+      if (loadMore){
+        for (var model in fetchedModels.models){
+          padlocks.add(model as Padlock);
+        }
+      }else {
         padlocks = [];
         for (var model in fetchedModels.models){
           padlocks.add(model as Padlock);
         }
-        for (var i in padlocks){
-          if (i.playing){
-            padlock = i;
-            await updatePlays(filter: PlayFilter(padlock: i.id.toString()));
-            for (var j in plays){
-              if (!j.confirmed){
-                play = j;
 
-                break;
-              }
-            }
-
-            if (change){
-              showContinuePlayingDialog = true;
-            }
-            break;
-          }
-        }
-      }else{
-        fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelFr: Models.user, modelsFr: [user]);
-        if (loadMore){
-          for (var model in fetchedModels.models){
-            padlocks.add(model as Padlock);
-          }
-        }else {
-          padlocks = [];
-          for (var model in fetchedModels.models){
-            print(model.id);
-            padlocks.add(model as Padlock);
-          }
-
-        }
       }
-
     }catch (e) {
       padlocks = [];
-      if (!(this.user.isStaff || this.user.isSuperuser)) {
-        await getApp();
-        if (!app.active) {
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updatePadlocks $e");
     }
     status = ModelsStatus.updated;
@@ -294,17 +239,25 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",models: Models.padlock);
-      padlock = await modelsApi.postModel(model: model,modelsFr: [user], modelFr: Models.user) as Padlock;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
+      padlock = await modelsApi.postModel(model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
       padlocks.add(padlock);
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("createPadlock $e");
+    }
+    status = ModelsStatus.updated;
+    notifyListeners();
+  }
+  Future<void> removePadlock({required Padlock model}) async {
+    status = ModelsStatus.updating;
+    notifyListeners();
+    try{
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
+      await modelsApi.deleteModel(id:model.id) ;
+    }catch (e){
+      await updateUserStatus(e);
+      print("removePadlock $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
@@ -313,14 +266,19 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",models: Models.padlock);
-      this.padlock = await modelsApi.putModel(id: model.id, model: model,modelsFr: [user], modelFr: Models.user) as Padlock;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
+      this.padlock = await modelsApi.putModel(id: model.id, model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
+      if (e == Exceptions.forbidden) {
+        users = [];
+        if (!(user.isStaff || user.isSuperuser)) {
+          await getApp();
+          if (!app.active) {
+            user.userStatus = UserStatus.appNotActive;
+          }
         }
+      }else if (e == Exceptions.unauthorized){
+        user.userStatus = UserStatus.unauthorized;
       }
       print("updatePadlock $e");
     }
@@ -332,7 +290,7 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",models: Models.app);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",modelType: ModelType.app);
       app = await modelsApi.getModel(id:1) as App;
     }catch (e){
       print("getApp $e");
@@ -344,7 +302,7 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",models: Models.app);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",modelType: ModelType.app);
       app = await modelsApi.putModel(id:1,model: app) as App;
     }catch (e){
       print("updateApp $e");
@@ -360,15 +318,11 @@ class ModelsManager with ChangeNotifier {
       String token = user.token;
       user = await getUser(user: user);
       user.token = token;
-    }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-          throw Exception("App is not active");
-        }
-      }
-      throw e;
+      user.userStatus = UserStatus.authenticated;
+
+    }catch (e) {
+      await updateUserStatus(e);
+      print("fetchUser $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
@@ -379,7 +333,7 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",models: Models.disabledNumbers);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",modelType: ModelType.disabledNumbers);
       fetchedModels = await modelsApi.getModels();
       disabledNumbers = [];
       for (var model in fetchedModels.models){
@@ -387,12 +341,7 @@ class ModelsManager with ChangeNotifier {
       }
     }catch (e){
       disabledNumbers = [];
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateDisabledNumbers $e");
     }
     status = ModelsStatus.updated;
@@ -402,15 +351,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",models: Models.disabledNumbers);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",modelType: ModelType.disabledNumbers);
       disabledNumbers[model.id - 1] = await modelsApi.putModel(id:model.id,model: model) as DisabledNumbers;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateDisabledNumber $e");
     }
     status = ModelsStatus.updated;
@@ -422,7 +366,7 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",models: Models.disabledBets);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",modelType: ModelType.disabledBets);
       fetchedModels = await modelsApi.getModels();
       disabledBets = [];
       for (var model in fetchedModels.models){
@@ -430,12 +374,7 @@ class ModelsManager with ChangeNotifier {
       }
     }catch (e){
       disabledBets = [];
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateDisabledBets $e");
     }
     status = ModelsStatus.updated;
@@ -445,15 +384,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",models: Models.disabledBets);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",modelType: ModelType.disabledBets);
       disabledBets[model.id - 1] = await modelsApi.putModel(id:model.id,model: model) as DisabledBets;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateDisabledBet $e");
     }
     status = ModelsStatus.updated;
@@ -466,7 +400,7 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",models: Models.collector);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
       fetchedModels = await modelsApi.getModels(filter: filter, page: page);
       if (loadMore){
         for (var model in fetchedModels.models){
@@ -480,12 +414,7 @@ class ModelsManager with ChangeNotifier {
       }
     }catch (e){
       collectors = [];
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateCollectors $e");
     }
     status = ModelsStatus.updated;
@@ -496,15 +425,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",models: Models.collector);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
       selectedCollector = await modelsApi.putModel(id: model.id, model: model) as Collector;
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("updateCollector $e");
     }
     status = ModelsStatus.updated;
@@ -514,16 +438,11 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",models: Models.collector);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
       selectedCollector = await modelsApi.postModel(model: model) as Collector;
 
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("createCollector $e");
     }
     status = ModelsStatus.updated;
@@ -533,15 +452,10 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",models: Models.collector);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
       await modelsApi.deleteModel(id: model.id);
     }catch (e){
-      if (!(user.isStaff || user.isSuperuser)){
-        await getApp();
-        if (!app.active){
-          showActiveAppDialog = true;
-        }
-      }
+      await updateUserStatus(e);
       print("removeCollector $e");
     }
     status = ModelsStatus.updated;
@@ -555,4 +469,36 @@ class ModelsManager with ChangeNotifier {
     selectedCollector = collector;
   }
 
+  Future<bool> isAppActive() async {
+    await getApp();
+    return app.active;
+  }
+
+  Future<bool> isUserActive() async {
+    await fetchUser();
+    return user.isActive;
+  }
+
+  Future<bool> isUserPlaying() async {
+    await updatePadlocks(filter: PadlockFilter(user: user.id.toString()),userFr: user);
+    for (var padlock in padlocks){
+      if (padlock.playing){
+        this.padlock = padlock;
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> updateUserStatus(Object e) async {
+    if (user.userStatus == UserStatus.authenticated) {
+      if (e == Exceptions.forbidden) {
+        if (!(user.isStaff || user.isSuperuser)) {
+          user.userStatus = UserStatus.appNotActive;
+        }
+      } else if (e == Exceptions.unauthorized) {
+        user.userStatus = UserStatus.unauthorized;
+      }
+    }
+  }
 }

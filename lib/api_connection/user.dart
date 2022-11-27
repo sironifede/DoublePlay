@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:bolita_cubana/api_connection/api.dart';
 import 'package:bolita_cubana/filters/filter.dart';
 import 'package:http/http.dart' as http;
 import '../models/models.dart';
@@ -65,11 +66,14 @@ Future<User> getUser({required User user}) async {
       'Authorization': 'token ' + user.token,
     },
   );
-  print(response.statusCode);
   if (response.statusCode == 401){
-    print("User has no access");
-    user.isActive = false;
-    throw Exception("User has no access");
+    throw Exceptions.unauthorized;
+  }
+  if (response.statusCode == 403){
+    throw Exceptions.forbidden;
+  }
+  if (response.statusCode == 400){
+    throw Exceptions.badRequest;
   }
   User? model;
   if (response.statusCode == 200) {

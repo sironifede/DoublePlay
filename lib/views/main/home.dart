@@ -23,9 +23,10 @@ class _HomePageState extends State<HomePage> {
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
       await mm.fetchUser();
-      mm.updateUsers().then((value) {
-        mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString()));
-      });
+      mm.showContinuePlayingDialog = await  mm.isUserPlaying();
+      if (mm.showContinuePlayingDialog){
+        mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+      }
       mm.updateDisabledNumbers();
       mm.updateDisabledBets();
       if (mm.user.isStaff || mm.user.isSuperuser){
@@ -37,8 +38,8 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    if (!mm.user.isActive && !mm.showedActiveAppDialog){
-      mm.showedActiveAppDialog = true;
+    if (mm.user.userStatus == UserStatus.unauthorized){
+      mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds:1), (){
         showDialog(
             context: context,
@@ -63,10 +64,8 @@ class _HomePageState extends State<HomePage> {
                 ],
               );
             }).then((value){
-          mm.showedActiveAppDialog = false;
           if (value != null){
             if (value){
-              mm.user = User();
               Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
             }
           }else{
@@ -74,8 +73,8 @@ class _HomePageState extends State<HomePage> {
           }
         });
       });
-    }else if (mm.showActiveAppDialog) {
-      mm.showActiveAppDialog = false;
+    }else if (mm.user.userStatus == UserStatus.appNotActive) {
+      mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds: 1), () {
         showDialog(
             context: context,
@@ -105,7 +104,6 @@ class _HomePageState extends State<HomePage> {
             }).then((value) {
           if (value != null){
             if (value){
-              mm.user = User();
               Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
             }
           }else{
@@ -142,7 +140,6 @@ class _HomePageState extends State<HomePage> {
             }).then((value) {
               if (value != null){
                 if (value){
-                  mm.user = User();
                   Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
                 }else{
                   Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
@@ -169,9 +166,10 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.refresh),
             onPressed: () async {
               await mm.fetchUser();
-              mm.updateUsers().then((value) {
-                mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString()));
-              });
+              mm.showContinuePlayingDialog = await mm.isUserPlaying();
+              if (mm.showContinuePlayingDialog){
+                mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+              }
               mm.updateDisabledNumbers();
               mm.updateDisabledBets();
               if (mm.user.isStaff || mm.user.isSuperuser){

@@ -26,7 +26,8 @@ class App  extends Model{
     var utc = DateTime.utc(now.year,now.month,now.day,int.parse(data["stop_hour"].split(":")[0]),int.parse(data["stop_hour"].split(":")[1]));
 
     print("now $now");
-    print("utc: ${utc}");
+    print("stop_hour_utc: ${utc}");
+    print("stop_hour_local: ${utc.toLocal()}");
     return App(
       id: data["id"],
       active: data["active"],

@@ -21,15 +21,15 @@ class ModelsApi {
   String uri = 'http://doubleplay.herokuapp.com/api/';
   String modelString;
   String token;
-  Models models;
+  ModelType modelType;
 
   ModelsApi({
     required this.modelString,
     required this.token,
-    required this.models,
+    required this.modelType,
   });
 
-  Future<FetchedModels> getModels({Filter? filter,int page = 1,List<Model>? modelsFr, Models? modelFr}) async {
+  Future<FetchedModels> getModels({Filter? filter,int page = 1,List<Model>? modelsFr, ModelType? modelTypeFr}) async {
     print("getModels: $modelString");
     bool makeRequest = false;
     if (modelsFr == null ){
@@ -56,7 +56,7 @@ class ModelsApi {
       if (response.statusCode == 400){
         throw Exceptions.badRequest;
       }
-
+      print("statusCode: ${response.statusCode}");
       if (response.statusCode == 200) {
         // If the server did return a 200 OK response,
         // then parse the JSON.
@@ -74,18 +74,18 @@ class ModelsApi {
           if (modelsFr != null){
             Model? modelFrk;
             for (modelFrk in modelsFr) {
-              if (modelFrk.id == row[modelFr!.name]) {
-                if (modelFr == Models.padlock){
-                  model = Model.fromMap(row,models, padlock: modelFrk as Padlock);
+              if (modelFrk.id == row[modelTypeFr!.name]) {
+                if (modelTypeFr == ModelType.padlock){
+                  model = Model.fromMap(row,modelType, padlock: modelFrk as Padlock);
                 }
-                if (modelFr == Models.user){
-                  model = Model.fromMap(row,models, user: modelFrk as User);
+                if (modelTypeFr == ModelType.user){
+                  model = Model.fromMap(row,modelType, user: modelFrk as User);
                 }
                 break;
               }
             }
           }else{
-            model = Model.fromMap(row,models);
+            model = Model.fromMap(row,modelType);
           }
           if (model != null){
             list.add(model);
@@ -98,7 +98,8 @@ class ModelsApi {
       return FetchedModels(models: [], hasMore: false);
     }
   }
-  Future<Model> getModel({required int id,List<Model>? modelsFr, Models? modelFr}) async {
+
+  Future<Model> getModel({required int id,List<Model>? modelsFr, ModelType? modelTypeFr}) async {
 
     final response = await http.get(
       Uri.parse('$uri$modelString/$id/'),
@@ -123,19 +124,19 @@ class ModelsApi {
       if (modelsFr != null){
         Model? modelFrk;
         for (modelFrk in modelsFr) {
-          if (modelFrk.id == map[modelFr!.name]) {
-            if (modelFr == Models.padlock){
-              model = Model.fromMap(map,models, padlock: modelFrk as Padlock);
+          if (modelFrk.id == map[modelTypeFr!.name]) {
+            if (modelTypeFr == ModelType.padlock){
+              model = Model.fromMap(map,modelType, padlock: modelFrk as Padlock);
             }
-            if (modelFr == Models.user){
-              model = Model.fromMap(map,models, user: modelFrk as User);
+            if (modelTypeFr == ModelType.user){
+              model = Model.fromMap(map,modelType, user: modelFrk as User);
             }
             break;
           }
         }
 
       }else{
-        model = Model.fromMap(map,models);
+        model = Model.fromMap(map,modelType);
       }
       return model!;
     }else{
@@ -143,7 +144,7 @@ class ModelsApi {
     }
   }
 
-  Future<Model> postModel({required Model model,List<Model>? modelsFr, Models? modelFr}) async {
+  Future<Model> postModel({required Model model,List<Model>? modelsFr, ModelType? modelTypeFr}) async {
 
     final response = await http.post(
       Uri.parse('$uri$modelString/'),
@@ -172,18 +173,18 @@ class ModelsApi {
       if (modelsFr != null){
         for (var modelFrk in modelsFr) {
 
-          if (modelFrk.id == map[modelFr!.name]) {
-            if (modelFr == Models.padlock){
-              model = Model.fromMap(map,models, padlock: modelFrk as Padlock);
+          if (modelFrk.id == map[modelTypeFr!.name]) {
+            if (modelTypeFr == ModelType.padlock){
+              model = Model.fromMap(map,modelType, padlock: modelFrk as Padlock);
             }
-            if (modelFr == Models.user){
-              model = Model.fromMap(map,models, user: modelFrk as User);
+            if (modelTypeFr == ModelType.user){
+              model = Model.fromMap(map,modelType, user: modelFrk as User);
             }
             break;
           }
         }
       }else{
-        model = Model.fromMap(map,models);
+        model = Model.fromMap(map,modelType);
       }
       return model!;
     }else{
@@ -191,7 +192,7 @@ class ModelsApi {
     }
   }
 
-  Future<Model> putModel({required int id, required Model model,List<Model>? modelsFr, Models? modelFr}) async {
+  Future<Model> putModel({required int id, required Model model,List<Model>? modelsFr, ModelType? modelTypeFr}) async {
     final response = await http.put(
       Uri.parse('$uri$modelString/$id/'),
       body: model.toUpdateMap(),
@@ -218,21 +219,21 @@ class ModelsApi {
         Model? modelFrk;
         for (modelFrk in modelsFr) {
           print("id: ${modelFrk.id}");
-          print("map: ${map[modelFr!.name]}");
-          if (modelFrk.id == map[modelFr.name]) {
+          print("map: ${map[modelTypeFr!.name]}");
+          if (modelFrk.id == map[modelTypeFr.name]) {
 
-            if (modelFr == Models.padlock){
-              model = Model.fromMap(map,models, padlock: modelFrk as Padlock);
+            if (modelTypeFr == ModelType.padlock){
+              model = Model.fromMap(map,modelType, padlock: modelFrk as Padlock);
             }
-            if (modelFr == Models.user){
-              model = Model.fromMap(map,models, user: modelFrk as User);
+            if (modelTypeFr == ModelType.user){
+              model = Model.fromMap(map,modelType, user: modelFrk as User);
             }
             break;
           }
         }
 
       }else{
-        model = Model.fromMap(map,models);
+        model = Model.fromMap(map,modelType);
       }
       return model!;
     }else{

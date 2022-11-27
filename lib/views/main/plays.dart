@@ -65,13 +65,13 @@ class _PlaysPageState extends State<PlaysPage> {
     mm = context.read<ModelsManager>();
     Future.delayed(const Duration(milliseconds: 1),() async {
       padlockFilter.user.value =  mm.selectedUser.id.toString();
-      await mm.updatePadlocks(filter: padlockFilter ,user: mm.selectedUser);
+      await mm.updatePadlocks(filter: padlockFilter ,userFr: mm.selectedUser);
 
       playModelOptions = await mm.updatePlays(filter: playFilter);
     });
   }
   void refresh() async {
-    await mm.updatePadlocks(filter: padlockFilter,user: mm.selectedUser);
+    await mm.updatePadlocks(filter: padlockFilter,userFr: mm.selectedUser);
     playModelOptions = await mm.updatePlays(filter: playFilter);
   }
   @override
@@ -220,7 +220,7 @@ class _PlaysPageState extends State<PlaysPage> {
                                       onPressed: () async {
 
                                         padlockFilter.month.value = month;
-                                        await mm.updatePadlocks(filter:padlockFilter ,user: mm.selectedUser);
+                                        await mm.updatePadlocks(filter:padlockFilter ,userFr: mm.selectedUser);
                                         playFilter.type.value = playType;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
@@ -384,7 +384,7 @@ class _PlaysPageState extends State<PlaysPage> {
                 onPressed: () async {
                   filtering = true;
                   playFilter.padlock.value = _padlockId.text;
-                  await mm.updatePadlocks(filter: padlockFilter ,user: mm.selectedUser);
+                  await mm.updatePadlocks(filter: padlockFilter ,userFr: mm.selectedUser);
                   mm.updatePlays(filter:playFilter).then((value) {
                     playModelOptions = value;
                   });

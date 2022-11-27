@@ -23,9 +23,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
       await mm.fetchUser();
-      mm.updateUsers().then((value) {
-        mm.updatePadlocks();
-      });
+      mm.updatePlays(filter:PlayFilter(padlock: mm.padlock.id.toString()));
       mm.updateCollectors();
     });
   }
@@ -40,9 +38,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
               icon: const Icon(Icons.refresh),
               onPressed: () async {
                 await mm.fetchUser();
-                mm.updateUsers().then((value) {
-                  mm.updatePadlocks();
-                });
+                mm.updatePlays(filter:PlayFilter(padlock: mm.padlock.id.toString()));
                 mm.updateCollectors();
               },
             ),
@@ -91,24 +87,23 @@ class _GenerateTicketState extends State<GenerateTicket> {
       for (var i in mm.collectors){
         for (var j in mm.padlocks){
           if (i.listers.contains(j.user.id) && j.id == mm.padlock.id){
-            list.add(Text("CT#${i.id} LT#${j.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800),));
-            list.add(Text("MES:${months[j.month - 1]}",style: TextStyle(fontSize: 20),));
-            list.add(Text("${j.createdAt!.month}/${j.createdAt!.day}/${j.createdAt!.year}"));
+            list.add(Text("CT#${i.id} LT#${j.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
+            list.add(Text("MES:${months[j.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
+            list.add(Text("${j.createdAt!.month}/${j.createdAt!.day}/${j.createdAt!.year}",style: TextStyle( color: Colors.black)));
             list.add(
                 SizedBox(
                   height: 32,
                 )
             );
             for (var play in mm.plays){
-              if (play.padlock.id == j.id){
-                list.add(
-                    Row(
-                      children: [
-                        Text("${play.dayNumber.toString().padLeft(3, '0')}-${play.nightNumber.toString().padLeft(3, '0')} ${play.type?.name}",style: TextStyle(fontSize: 20)),
-                      ],
-                    )
-                );
-              }
+              print("haasdfkljasdflkasdjf");
+              list.add(
+                  Row(
+                    children: [
+                      Text("${play.dayNumber.toString().padLeft(3, '0')}-${play.nightNumber.toString().padLeft(3, '0')} ${play.type?.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
+                    ],
+                  )
+              );
             }
             list.add(
                 SizedBox(
@@ -119,7 +114,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
               SizedBox(
                 child: Row(
                   children: [
-                    Text("Numero de confirmacion",style: TextStyle(fontSize: 20)),
+                    Text("Numero de confirmacion",style: TextStyle(fontSize: 20,color: Colors.black)),
                   ],
                 ),
               )
@@ -127,7 +122,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
             list.add(
               Row(
                 children: [
-                  Text("${j.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20)),
+                  Text("${j.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20, color: Colors.black)),
                 ],
               )
             );
@@ -139,21 +134,21 @@ class _GenerateTicketState extends State<GenerateTicket> {
             list.add(
                 Row(
                   children: [
-                    Text("Info Opcional",style: TextStyle(fontSize: 20)),
+                    Text("Info Opcional",style: TextStyle(fontSize: 20, color: Colors.black)),
                   ],
                 )
             );
             list.add(
                 Row(
                   children: [
-                    Text("Telefono: ${j.phone}",style: TextStyle(fontSize: 20)),
+                    Text("Telefono: ${j.phone}",style: TextStyle(fontSize: 20, color: Colors.black)),
                   ],
                 )
             );
             list.add(
                 Row(
                   children: [
-                    Text("Nombre: ${j.name}",style: TextStyle(fontSize: 20)),
+                    Text("Nombre: ${j.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
                   ],
                 )
             );

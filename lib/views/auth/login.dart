@@ -1,6 +1,7 @@
 // ignore: unused_import
 // ignore_for_file: unnecessary_import, unused_import, depend_on_referenced_packages, use_key_in_widget_constructors, library_private_types_in_public_api, prefer_const_constructors, body_might_complete_normally_nullable
 
+import 'package:bolita_cubana/models/models.dart';
 import 'package:bolita_cubana/models/models_manager.dart' as g;
 import 'package:bolita_cubana/routes/route_generator.dart';
 
@@ -40,8 +41,8 @@ class _LoginPage extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    if (mm.showActiveAppDialog ){
-      mm.showActiveAppDialog = false;
+    if (mm.user.userStatus == UserStatus.appNotActive){
+      mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds: 1),(){
         showDialog(
             context: context,
@@ -159,7 +160,7 @@ class _LoginPage extends State<LoginPage> {
                                         Navigator.of(context)
                                             .pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
                                       }, onError: (error) {
-                                        if (!mm.showActiveAppDialog) {
+                                        if (mm.user.userStatus != UserStatus.appNotActive) {
                                           setState(() {
                                             print(error);
                                             _errorUsername =
