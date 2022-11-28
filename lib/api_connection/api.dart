@@ -196,11 +196,12 @@ class ModelsApi {
     final response = await http.put(
       Uri.parse('$uri$modelString/$id/'),
       body: model.toUpdateMap(),
-      headers: <String, String>{
+      headers: {
         'Authorization': 'token $token',
-
       },
     );
+    Map<String, dynamic> map = jsonDecode(utf8.decode(response.bodyBytes));
+    print(map);
     print("putModel: $modelString ,code: ${response.statusCode}");
     if (response.statusCode == 401){
       throw Exceptions.unauthorized;

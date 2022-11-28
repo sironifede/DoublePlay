@@ -266,7 +266,7 @@ class _PlaysPageState extends State<PlaysPage> {
                   });
                   if (result != null){
                     if (result){
-                      print("eliminando jugadas");//TODO implements eliminar usuarios
+                      print("eliminando jugadas");
                       removeElement(1);
                     }
                   }

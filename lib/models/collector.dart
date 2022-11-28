@@ -22,16 +22,16 @@ class Collector extends Model{
   @override
   Map<String, dynamic> toUpdateMap(){
     return {
-      "id": id,
-      "listers": "$listers",
-      "name": name,
+      "id": id.toString(),
+      "listers": listers.toString(),
+      "name": name
     };
   }
   @override
   Map<String, dynamic> toCreateMap(){
     return {
-      "listers": "$listers",
-      "name": name,
+      "listers":listers.toString(),
+      "name":  name
     };
   }
 
@@ -53,15 +53,19 @@ class Collector extends Model{
         int.parse(date.split("-")[2].split("T")[1].split(":")[1]), int.parse(
         date.split("-")[2].split("T")[1].split(":")[2].split(".")[0].replaceAll(
             "Z", "")));
-    List<int> list = [];
-    for (var i in data["listers"]){
-      try {
-        list.add(i as int);
-      }catch(e){}
+    List<int> listers = [];
+    if (data["listers"] != ""){
+      String ds = data["listers"].toString().substring(1);
+      ds = ds.substring(0,ds.length - 1).trim();
+      for (var i in ds.split(",")){
+        try {
+          listers.add(int.parse(i.toString()));
+        }catch(e){}
+      }
     }
     return Collector(
       id: data["id"],
-      listers: list,
+      listers: listers,
       name: data["name"],
       createdAt: createdAt,
       updatedAt: updatedAt,

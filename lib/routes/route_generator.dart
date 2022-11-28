@@ -31,6 +31,10 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const UserPage());
       case Routes.plays:
         return MaterialPageRoute(builder: (_) => const PlaysPage());
+      case Routes.collectors:
+        return MaterialPageRoute(builder: (_) => const CollectorsPage());
+      case Routes.addCollector:
+        return MaterialPageRoute(builder: (_) => const AddCollectorPage());
       case Routes.disabledNumbers:
         return MaterialPageRoute(builder: (_) => const DisabledNumbersPage());
       case Routes.disabledBets:
@@ -57,6 +61,8 @@ abstract class Routes{
   static const String settings = '/settings';
   static const String plays = '/plays';
   static const String play = '/play';
+  static const String collectors = '/collectors';
+  static const String addCollector = '/addCollector';
   static const String disabledNumbers = '/disabledNumbers';
   static const String disabledBets = '/disabledBets';
   static const String padlock = '/padlock';

@@ -14,4 +14,5 @@ export 'package:bolita_cubana/views/main/padlock.dart';
 export 'package:bolita_cubana/views/main/disabled_numbers.dart';
 export 'package:bolita_cubana/views/main/disabled_bets.dart';
 export 'package:bolita_cubana/views/main/generate_ticket.dart';
-
+export 'package:bolita_cubana/views/main/collectors.dart';
+export 'package:bolita_cubana/views/main/add_colector.dart';

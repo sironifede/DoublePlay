@@ -41,14 +41,6 @@ class _MonthPageState extends State<MonthPage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Elegir mes"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.of(context).pushNamed(Routes.settings);
-              },
-            ),
-          ],
         ),
         body:Column(
             crossAxisAlignment: CrossAxisAlignment.center,

@@ -177,12 +177,6 @@ class _HomePageState extends State<HomePage> {
               }
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.of(context).pushNamed(Routes.settings);
-            },
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -236,6 +230,15 @@ class _HomePageState extends State<HomePage> {
                 text: "Administrar Usuarios",
                 backgroundImage: "assets/images/users.png",
               ),
+          );
+          list.add(
+            OptionWidget(
+              onPressed: (){
+                Navigator.of(context).pushNamed(Routes.collectors);
+              },
+              text: "Administrar colectores",
+              backgroundImage: "assets/images/users.png",
+            ),
           );
           list.add(
               OptionWidget(

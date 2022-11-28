@@ -190,7 +190,7 @@ class _UsersPageState extends State<UsersPage> {
                 });
                 if (result != null){
                   if (result){
-                    print("eliminando usuarios");//TODO implements eliminar usuarios
+                    print("eliminando usuarios");
                     removeElement(1);
                   }
                 }
@@ -240,9 +240,9 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removeUser(model: element.user).then((v) {
+    mm.removeUser(model: element.collector).then((v) {
       elements.remove(element);
-      mm.users.remove(element.user);
+      mm.users.remove(element.collector);
       bool continueDeleting = false;
       for (element in elements){
         if (element.selected){

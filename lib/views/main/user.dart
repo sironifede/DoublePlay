@@ -30,14 +30,6 @@ class _UserPageState extends State<UserPage> {
     return Scaffold(
         appBar: AppBar(
           title: const Text("Usuario"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings),
-              onPressed: () {
-                Navigator.of(context).pushNamed(Routes.settings);
-              },
-            ),
-          ],
         ),
         body:SingleChildScrollView(
           child: Column(
