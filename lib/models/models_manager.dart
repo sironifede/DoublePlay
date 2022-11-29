@@ -268,18 +268,9 @@ class ModelsManager with ChangeNotifier {
     try{
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
       this.padlock = await modelsApi.putModel(id: model.id, model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
+      print(this.padlock.toUpdateMap());
     }catch (e){
-      if (e == Exceptions.forbidden) {
-        users = [];
-        if (!(user.isStaff || user.isSuperuser)) {
-          await getApp();
-          if (!app.active) {
-            user.userStatus = UserStatus.appNotActive;
-          }
-        }
-      }else if (e == Exceptions.unauthorized){
-        user.userStatus = UserStatus.unauthorized;
-      }
+      updateUserStatus(e);
       print("updatePadlock $e");
     }
     status = ModelsStatus.updated;

@@ -118,8 +118,8 @@ class _MonthPageState extends State<MonthPage> {
           itemCount: 3,
           itemBuilder: (context, index) {
             DateTime now = DateTime.now();
-            index += now.month ;
-            if (now.month > 8) {
+            index += now.month -1;
+            if (now.month - 1 > 8) {
               if (index > 11) {
                 index -= 12;
               }

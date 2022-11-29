@@ -25,6 +25,12 @@ class _PadlockPageState extends State<PadlockPage> {
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
       mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+      setState(() {
+        print(mm.padlock.toUpdateMap());
+        _nameController..text = mm.padlock.name;
+        _phoneController..text = mm.padlock.phone;
+      });
+
     });
   }
 
@@ -46,7 +52,14 @@ class _PadlockPageState extends State<PadlockPage> {
               crossAxisAlignment: CrossAxisAlignment.center,
               children:generateColumn()
           ),
-        )
+        ),
+      floatingActionButton: FloatingActionButton.extended(
+          onPressed: (){
+            mm.showContinuePlayingDialog = false;
+            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
+          },
+          label: Text("VOLVER AL INICIO")
+      ),
     );
   }
   List<Widget> generateColumn(){
@@ -110,16 +123,7 @@ class _PadlockPageState extends State<PadlockPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    onPressed: (){
-                      mm.showContinuePlayingDialog = false;
-                      Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
-                    },
-                    child: Text("VOLVER AL INICIO")
-                ),
-              ),
+
               Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(

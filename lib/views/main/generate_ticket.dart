@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/models_manager.dart';
+import '../../routes/route_generator.dart';
 
 
 class GenerateTicket extends StatefulWidget {
@@ -32,27 +33,27 @@ class _GenerateTicketState extends State<GenerateTicket> {
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     return Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () async {
-                await mm.fetchUser();
-                mm.updatePlays(filter:PlayFilter(padlock: mm.padlock.id.toString()));
-                mm.updateCollectors();
-              },
-            ),
-          ],
-          title: const Text("Ticket"),
-        ),
-        body:SingleChildScrollView(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children:[
-                ListTile(
-                    title: Text("Para reclamar su premio")
-                ),
-                Center(
+      appBar: AppBar(
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () async {
+              await mm.fetchUser();
+              mm.updatePlays(filter:PlayFilter(padlock: mm.padlock.id.toString()));
+              mm.updateCollectors();
+            },
+          ),
+        ],
+        title: const Text("Ticket"),
+      ),
+      body:SingleChildScrollView(
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children:[
+              ListTile(
+                  title: Text("Para reclamar su premio")
+              ),
+              Center(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Container(
@@ -75,8 +76,15 @@ class _GenerateTicketState extends State<GenerateTicket> {
                 ),
               ),
             ]
-          ),
-        )
+        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+          onPressed: (){
+            mm.showContinuePlayingDialog = false;
+            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
+          },
+          label: Text("VOLVER AL INICIO")
+      ),
     );
   }
   List<Widget> generateColumn(){
@@ -85,32 +93,45 @@ class _GenerateTicketState extends State<GenerateTicket> {
       list.add(LinearProgressIndicator());
     }else {
       for (var i in mm.collectors){
-        for (var j in mm.padlocks){
-          if (i.listers.contains(j.user.id) && j.id == mm.padlock.id){
-            list.add(Text("CT#${i.id} LT#${j.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
-            list.add(Text("MES:${months[j.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
-            list.add(Text("${j.createdAt!.month}/${j.createdAt!.day}/${j.createdAt!.year}",style: TextStyle( color: Colors.black)));
+        if (i.listers.contains(mm.padlock.user.id)){
+          list.add(Text("CT#${i.id} LT#${mm.padlock.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
+          list.add(Text("MES:${months[mm.padlock.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
+          list.add(Text("${mm.padlock.createdAt!.month}/${mm.padlock.createdAt!.day}/${mm.padlock.createdAt!.year}",style: TextStyle( color: Colors.black)));
+          list.add(
+              SizedBox(
+                height: 32,
+              )
+          );
+          int total = 0;
+          for (var play in mm.plays){
+            print("haasdfkljasdflkasdjf");
             list.add(
-                SizedBox(
-                  height: 32,
+                Row(
+                  children: [
+                    Text("${play.dayNumber.toString().padLeft(3, '0')}-${play.nightNumber.toString().padLeft(3, '0')} ${play.type?.name}  -  ${play.bet}\$",style: TextStyle(fontSize: 20, color: Colors.black)),
+                  ],
                 )
             );
-            for (var play in mm.plays){
-              print("haasdfkljasdflkasdjf");
-              list.add(
-                  Row(
-                    children: [
-                      Text("${play.dayNumber.toString().padLeft(3, '0')}-${play.nightNumber.toString().padLeft(3, '0')} ${play.type?.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
-                    ],
-                  )
-              );
-            }
-            list.add(
-                SizedBox(
-                  height: 32,
-                )
-            );
-            list.add(
+            total += play.bet;
+          }
+          list.add(
+              SizedBox(
+                height: 32,
+              )
+          );
+          list.add(
+              Row(
+                children: [
+                  Text("TOTAL: ${total}\$",style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+          list.add(
+              SizedBox(
+                height: 32,
+              )
+          );
+          list.add(
               SizedBox(
                 child: Row(
                   children: [
@@ -118,42 +139,41 @@ class _GenerateTicketState extends State<GenerateTicket> {
                   ],
                 ),
               )
-            );
-            list.add(
+          );
+          list.add(
               Row(
                 children: [
-                  Text("${j.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20, color: Colors.black)),
+                  Text("${mm.padlock.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20, color: Colors.black)),
                 ],
               )
-            );
-            list.add(
-                SizedBox(
-                  height: 32,
-                )
-            );
-            list.add(
-                Row(
-                  children: [
-                    Text("Info Opcional",style: TextStyle(fontSize: 20, color: Colors.black)),
-                  ],
-                )
-            );
-            list.add(
-                Row(
-                  children: [
-                    Text("Telefono: ${j.phone}",style: TextStyle(fontSize: 20, color: Colors.black)),
-                  ],
-                )
-            );
-            list.add(
-                Row(
-                  children: [
-                    Text("Nombre: ${j.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
-                  ],
-                )
-            );
-            break;
-          }
+          );
+          list.add(
+              SizedBox(
+                height: 32,
+              )
+          );
+          list.add(
+              Row(
+                children: [
+                  Text("Info Opcional",style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+          list.add(
+              Row(
+                children: [
+                  Text("Telefono: ${mm.padlock.phone}",style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+          list.add(
+              Row(
+                children: [
+                  Text("Nombre: ${mm.padlock.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+          break;
         }
       }
 
