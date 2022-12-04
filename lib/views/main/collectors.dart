@@ -6,6 +6,7 @@ import '../../filters/filters.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
 import '../../routes/route_generator.dart';
+import '../shimmer.dart';
 import '../views.dart';
 
 class CollectorsPage extends StatefulWidget {
@@ -60,7 +61,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
 
     });
   }
-  void refresh() async {
+  Future<void> _refresh() async {
     await mm.updateUsers();
     collectorModelOptions = await mm.updateCollectors(filter: collectorFilter);
   }
@@ -68,10 +69,14 @@ class _CollectorsPageState extends State<CollectorsPage> {
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     bool updating = false;
+    bool deleting = false;
     for (var element in elements){
       if (element.updating){
         updating = true;
-        break;
+
+      }
+      if (element.deleting){
+        deleting = true;
       }
     }
     if (!updating) {
@@ -184,12 +189,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
                   }
                 }
               }
-          ):IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: (){
-                refresh();
-              }
-          ),
+          ):Text(""),
           PopupMenuButton<String>(
             onSelected: handleClick,
             itemBuilder: (BuildContext context) {
@@ -203,11 +203,15 @@ class _CollectorsPageState extends State<CollectorsPage> {
           ),
         ],
       ),
-        body: SingleChildScrollView(
-          child: Column(
-
-            mainAxisSize: MainAxisSize.min,
-            children: getList(),
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child: Shimmer(
+            child: ShimmerLoading(
+              isLoading: (loading && !deleting && !updating),
+              child: ListView(
+                children: getList(),
+              ),
+            ),
           ),
         ),
         floatingActionButton:ElevatedButton.icon(
@@ -226,6 +230,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
         break;
       }
     }
+
     setState(() {
       element.deleting = true;
     });
@@ -248,15 +253,12 @@ class _CollectorsPageState extends State<CollectorsPage> {
           SnackBar(
               content: Text("Se han elimnado $cant usuarios")),
         );
-        refresh();
+        _refresh();
       }
     });
   }
   List<Widget> getList(){
     List<Widget> list = [];
-    if (loading){
-      list.add(const LinearProgressIndicator());
-    }
     if (elements.isNotEmpty){
       list.add(
           ListTile(

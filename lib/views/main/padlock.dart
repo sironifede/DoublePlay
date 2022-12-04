@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../filters/play.dart';
 import '../../models/models.dart';
+import '../shimmer.dart';
 
 class PadlockPage extends StatefulWidget {
   const PadlockPage({Key? key,}): super(key: key);
@@ -24,16 +25,17 @@ class _PadlockPageState extends State<PadlockPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
-      setState(() {
-        print(mm.padlock.toUpdateMap());
-        _nameController..text = mm.padlock.name;
-        _phoneController..text = mm.padlock.phone;
-      });
-
+      _refresh();
     });
   }
-
+  Future<void> _refresh() async {
+    mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+    setState(() {
+      print(mm.padlock.toUpdateMap());
+      _nameController..text = mm.padlock.name;
+      _phoneController..text = mm.padlock.phone;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
@@ -43,16 +45,22 @@ class _PadlockPageState extends State<PadlockPage> {
         Navigator.of(context).pushNamed(Routes.generateTicket);
       });
     }
+    loading = (mm.status == ModelsStatus.updating);
     return Scaffold(
-        appBar: AppBar(
-          title: const Text("Candados"),
-        ),
-        body:SingleChildScrollView(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children:generateColumn()
+      appBar: AppBar(
+        title: const Text("Candados"),
+      ),
+      body:RefreshIndicator(
+        onRefresh: _refresh,
+        child: Shimmer(
+          child: ShimmerLoading(
+            isLoading: loading,
+            child: ListView(
+                children: generateColumn()
+            ),
           ),
         ),
+      ),
       floatingActionButton: FloatingActionButton.extended(
           onPressed: (){
             mm.showContinuePlayingDialog = false;
@@ -64,86 +72,84 @@ class _PadlockPageState extends State<PadlockPage> {
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
-    if (mm.status == ModelsStatus.updating ){
-      list.add(LinearProgressIndicator());
-    }else {
-      list.add(
-          ListTile(
-              title: Text("Candados separados para generar el ticket de las jugadas:")
-          )
-      );
-      List<Widget> plays = [];
-      for (var play in mm.plays){
-        plays.add(
-          Center(
-            child: PlayListTile(
-                play: play,
-                onTap: (){
 
-                }
-            ),
-          )
-        );
-      }
-      list.add(
-        Padding(
-          padding: const EdgeInsets.only(left:64, right: 64, top: 8),
-          child: Column(
-            children:plays,
+    list.add(
+        ListTile(
+            title: Text("Candados separados para generar el ticket de las jugadas:")
+        )
+    );
+    List<Widget> plays = [];
+    for (var play in mm.plays){
+      plays.add(
+        Center(
+          child: PlayListTile(
+              play: play,
+              onTap: (){
+
+              }
           ),
         )
       );
-      list.add(Divider());
-      list.add(
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            controller: _nameController,
-            decoration: InputDecoration(
-              labelText: "Nombre",
-              hintText: "Nombre del jugador",
-            ),
-          ),
-        ),
-      );
-      list.add(
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: TextField(
-            controller: _phoneController,
-            decoration: InputDecoration(
-              labelText: "Telefono",
-              hintText: "Telefono del jugador",
-            ),
-          ),
-        ),
-      );
-      list.add(Divider());
-      list.add(
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: ElevatedButton(
-                    onPressed: (){
-                      mm.showContinuePlayingDialog = false;
-                      mm.padlock.name = _nameController.text;
-                      mm.padlock.phone = _phoneController.text;
-                      mm.updatePadlock(model: mm.padlock).then((value) {
-                        setState(() {
-                          navigate = true;
-                        });
-                      });
-                    },
-                    child: Text("GENERAR TICKET")
-                ),
-              ),
-            ],
-          )
-      );
     }
+    list.add(
+      Padding(
+        padding: const EdgeInsets.only(left:64, right: 64, top: 8),
+        child: Column(
+          children:plays,
+        ),
+      )
+    );
+    list.add(Divider());
+    list.add(
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: TextField(
+          controller: _nameController,
+          decoration: InputDecoration(
+            labelText: "Nombre",
+            hintText: "Nombre del jugador",
+          ),
+        ),
+      ),
+    );
+    list.add(
+      Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: TextField(
+          controller: _phoneController,
+          decoration: InputDecoration(
+            labelText: "Telefono",
+            hintText: "Telefono del jugador",
+          ),
+        ),
+      ),
+    );
+    list.add(Divider());
+    list.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ElevatedButton(
+                  onPressed: (){
+                    mm.showContinuePlayingDialog = false;
+                    mm.padlock.name = _nameController.text;
+                    mm.padlock.phone = _phoneController.text;
+                    mm.updatePadlock(model: mm.padlock).then((value) {
+                      setState(() {
+                        navigate = true;
+                      });
+                    });
+                  },
+                  child: Text("GENERAR TICKET")
+              ),
+            ),
+          ],
+        )
+    );
+
 
 
     return list;

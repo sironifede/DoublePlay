@@ -6,6 +6,7 @@ import '../../filters/filters.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
 import '../../routes/route_generator.dart';
+import '../shimmer.dart';
 import '../views.dart';
 
 class UsersPage extends StatefulWidget {
@@ -55,10 +56,10 @@ class _UsersPageState extends State<UsersPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      userModelOptions = await mm.updateUsers(filter: userFilter);
+      await _refresh();
     });
   }
-  void refresh() async {
+  Future<void> _refresh() async {
     userModelOptions = await mm.updateUsers(filter: userFilter);
   }
   @override
@@ -195,12 +196,7 @@ class _UsersPageState extends State<UsersPage> {
                   }
                 }
               }
-          ):IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: (){
-                refresh();
-              }
-          ),
+          ):Text(""),
           PopupMenuButton<String>(
             onSelected: handleClick,
             itemBuilder: (BuildContext context) {
@@ -214,11 +210,15 @@ class _UsersPageState extends State<UsersPage> {
           ),
         ],
       ),
-        body: SingleChildScrollView(
-          child: Column(
-
-            mainAxisSize: MainAxisSize.min,
-            children: getList(),
+        body: RefreshIndicator(
+          onRefresh: _refresh,
+          child:Shimmer(
+            child: ShimmerLoading(
+              isLoading: loading,
+              child: ListView(
+                children: getList(),
+              ),
+            ),
           ),
         ),
         floatingActionButton:ElevatedButton.icon(
@@ -240,9 +240,9 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removeUser(model: element.collector).then((v) {
+    mm.removeUser(model: element.user).then((v) {
       elements.remove(element);
-      mm.users.remove(element.collector);
+      mm.users.remove(element.user);
       bool continueDeleting = false;
       for (element in elements){
         if (element.selected){
@@ -259,15 +259,12 @@ class _UsersPageState extends State<UsersPage> {
           SnackBar(
               content: Text("Se han elimnado $cant usuarios")),
         );
-        refresh();
+        _refresh();
       }
     });
   }
   List<Widget> getList(){
     List<Widget> list = [];
-    if (loading){
-      list.add(const LinearProgressIndicator());
-    }
     if (elements.isNotEmpty){
       list.add(
           ListTile(

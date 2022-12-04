@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
+import '../shimmer.dart';
 
 class MonthPage extends StatefulWidget {
   const MonthPage({Key? key,}): super(key: key);
@@ -22,12 +23,15 @@ class _MonthPageState extends State<MonthPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      await mm.updatePadlocks(userFr: mm.user, filter: PadlockFilter(user: mm.user.id.toString()));
-      mm.plays = [] ;
-      for (var padlock in mm.padlocks) {
-        mm.updatePlays(filter: PlayFilter(padlock: padlock.id.toString()), loadMore: true);
-      }
+      await _refresh();
     });
+  }
+  Future<void> _refresh() async {
+    await mm.updatePadlocks(userFr: mm.user, filter: PadlockFilter(user: mm.user.id.toString()));
+    mm.plays = [] ;
+    for (var padlock in mm.padlocks) {
+      mm.updatePlays(filter: PlayFilter(padlock: padlock.id.toString()), loadMore: true);
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -38,13 +42,21 @@ class _MonthPageState extends State<MonthPage> {
         Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
       });
     }
+    loading = (mm.status == ModelsStatus.updating);
     return Scaffold(
         appBar: AppBar(
           title: const Text("Elegir mes"),
         ),
-        body:Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children:generateColumn()
+        body:RefreshIndicator(
+          onRefresh: _refresh,
+          child: Shimmer(
+            child: ShimmerLoading(
+              isLoading: loading,
+              child: ListView(
+                  children:generateColumn()
+              ),
+            ),
+          ),
         )
     );
   }
@@ -89,58 +101,55 @@ class _MonthPageState extends State<MonthPage> {
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
-    if (mm.status == ModelsStatus.updating ){
-      list.add(LinearProgressIndicator());
-    }else {
-      list.add(
-          ListTile(
-            title: Text('Escoja el mes de su jugada'),
-          )
-      );
-      list.add(Divider());
-      List<String> months = [
-        "Enero",
-        "Febrero",
-        "Marzo",
-        "Abril",
-        "Mayo",
-        "Junio",
-        "Julio",
-        "Agosto",
-        "Septiembre",
-        "Octubre",
-        "Noviembre",
-        "Diciembre"
-      ];
-      list.add(
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: 3,
-          itemBuilder: (context, index) {
-            DateTime now = DateTime.now();
-            index += now.month -1;
-            if (now.month - 1 > 8) {
-              if (index > 11) {
-                index -= 12;
-              }
+    list.add(
+        ListTile(
+          title: Text('Escoja el mes de su jugada'),
+        )
+    );
+    list.add(Divider());
+    List<String> months = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre"
+    ];
+    list.add(
+      ListView.builder(
+        shrinkWrap: true,
+        itemCount: 3,
+        itemBuilder: (context, index) {
+          DateTime now = DateTime.now();
+          index += now.month -1;
+          if (now.month - 1 > 8) {
+            if (index > 11) {
+              index -= 12;
             }
+          }
 
-            return Center(
-              child: ElevatedButton(
-                child: Text("${months[index]}"),
-                onPressed: (canPlay(index + 1))? () async {
-                  await mm.createPadlock(model: Padlock(user: mm.user, playing: true, month: index + 1)).then((value) {
-                    mm.firstPlay = true;
-                    navigate = true;
-                  });
+          return Center(
+            child: ElevatedButton(
+              child: Text("${months[index]}"),
+              onPressed: (canPlay(index + 1))? () async {
+                await mm.createPadlock(model: Padlock(user: mm.user, playing: true, month: index + 1)).then((value) {
+                  mm.firstPlay = true;
+                  navigate = true;
+                });
 
-                } : null,
-              ),
-            );
-          },
-        ),
-      );
-    }
+              } : null,
+            ),
+          );
+        },
+      ),
+    );
+
     return list;
   }
 }

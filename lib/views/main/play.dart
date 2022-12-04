@@ -9,6 +9,7 @@ import 'dart:math';
 
 import '../../models/play.dart';
 import '../../routes/route_generator.dart';
+import '../shimmer.dart';
 
 class PlayPage extends StatefulWidget {
   const PlayPage({Key? key,}): super(key: key);
@@ -117,7 +118,7 @@ class _PlayPageState extends State<PlayPage> {
                   minimumSize: Size.zero, // Set this
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 ),
-                child: Text("$price",
+                child: Text("$price\$",
                   style: TextStyle(color: Colors.white),
                 )));
       }
@@ -213,6 +214,16 @@ class _PlayPageState extends State<PlayPage> {
       await mm.updatePlays(
           filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
     }
+  }
+  Future<void> _refresh() async {
+    await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
+    mm.plays = [];
+    for (var padlock in mm.padlocks) {
+      await mm.updatePlays(
+          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
+    }
+    mm.updateDisabledNumbers();
+    mm.updateDisabledBets();
   }
 
 
@@ -353,350 +364,358 @@ class _PlayPageState extends State<PlayPage> {
         ],
       ),
 
-      body: (loading)?LinearProgressIndicator(): Stack(
-        children: [
-          Column(
-              mainAxisSize: MainAxisSize.max,
-              mainAxisAlignment: MainAxisAlignment.start,
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: Shimmer(
+          child: ShimmerLoading(
+            isLoading: loading,
+            child: Stack(
               children: [
-                (!random)? Text(""):ListTile(
-                  title: Text("Intentos restatnes de la jugada aleatoria: ${3 - mm.play.nRandom}"),
-                ),
-                SizedBox(
-                  height: 60,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Center(child: Row(
-                        children: [
-                          Image.asset('assets/images/sun.png'),
-                          (dayNumberPicked)? Text(""):IconButton(
-                            icon: Icon(Icons.arrow_upward),
-                            onPressed: () async {
-                              double toOffset = 0;
-                              for (int i = 1; i < scrollableNumbers.length; i ++){
-                                if (_scrollDayController.offset /60 > scrollableNumbers[i]){
-                                  toOffset = scrollableNumbers[i] * 60;
-                                }
-                              }
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
-                                _scrollDayController.jumpTo(
-                                  toOffset,
-                                );
-                              });
-                            },
-                          ),
-                          (dayNumberPicked)? Text(""):IconButton(
-                            icon: Icon(Icons.arrow_downward),
-                            onPressed: () async {
-                              double toOffset = 900;
-                              for (int i = 1; i < scrollableNumbers.length; i ++){
-                                if (_scrollDayController.offset /60 < scrollableNumbers[i]){
-                                  toOffset = scrollableNumbers[i] * 60;
-                                  break;
-                                }
-                              }
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
-                                _scrollDayController.jumpTo(
-                                  toOffset,
-                                );
-                              });
-                            },
-                          ),
-                        ],
-                      )),
-                      const SizedBox(
-                        width: 16,
-                      ),
-                      Center(child: Row(
-                        children: [
-                          Image.asset('assets/images/moon.png',height: 100,),
-                          (nightNumberPicked)? Text(""):IconButton(
-                            icon: Icon(Icons.arrow_upward),
-                            onPressed: () async {
-                              double toOffset = 0;
-                              for (int i = 1; i < scrollableNumbers.length; i ++){
-                                if (_scrollNightController.offset /60 > scrollableNumbers[i]){
-                                  toOffset = scrollableNumbers[i] * 60;
-                                }
-                              }
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
-                                _scrollNightController.jumpTo(
-                                  toOffset,
-                                );
-                              });
-                            },
-                          ),
-                          (nightNumberPicked)? Text(""):IconButton(
-                            icon: Icon(Icons.arrow_downward),
-                            onPressed: () async {
-                              double toOffset = 900;
-                              for (int i = 1; i < scrollableNumbers.length; i ++){
-                                if (_scrollNightController.offset /60 < scrollableNumbers[i]){
-                                  toOffset = scrollableNumbers[i] * 60;
-                                  break;
-                                }
-                              }
-                              SchedulerBinding.instance.addPostFrameCallback((_) {
-                                _scrollNightController.jumpTo(
-                                  toOffset,
-                                );
-                              });
-                            },
-                          ),
-                        ],
-                      )),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Stack(
-                    children: [
+                ListView(
 
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          dayNumberPicked
-                              ? Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              color: Colors.black,
-                              child: Container(
-                                color: Colors.red,
-                                child: ListTile(
-                                  focusColor: Colors.red.shade900,
-                                  title: Center(
-                                      child: Text(
-                                        "${mm.play.dayNumber.toString().padLeft(3, '0')}",
-                                        style: const TextStyle(fontSize: 40),
-                                      )
-                                  ),
-                                  onTap: () {
-                                    if (!random) {
-                                      setState(() {
-                                        dayNumberPicked = false;
-                                      });
+                    children: [
+                      (!random)? Text(""):ListTile(
+                        title: Text("Intentos restatnes de la jugada aleatoria: ${3 - mm.play.nRandom}"),
+                      ),
+                      SizedBox(
+                        height: 60,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            Center(child: Row(
+                              children: [
+                                Image.asset('assets/images/sun.png'),
+                                (dayNumberPicked)? Text(""):IconButton(
+                                  icon: Icon(Icons.arrow_upward),
+                                  onPressed: () async {
+                                    double toOffset = 0;
+                                    for (int i = 1; i < scrollableNumbers.length; i ++){
+                                      if (_scrollDayController.offset /60 > scrollableNumbers[i]){
+                                        toOffset = scrollableNumbers[i] * 60;
+                                      }
                                     }
+                                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                                      _scrollDayController.jumpTo(
+                                        toOffset,
+                                      );
+                                    });
                                   },
                                 ),
-                              )
+                                (dayNumberPicked)? Text(""):IconButton(
+                                  icon: Icon(Icons.arrow_downward),
+                                  onPressed: () async {
+                                    double toOffset = 900;
+                                    for (int i = 1; i < scrollableNumbers.length; i ++){
+                                      if (_scrollDayController.offset /60 < scrollableNumbers[i]){
+                                        toOffset = scrollableNumbers[i] * 60;
+                                        break;
+                                      }
+                                    }
+                                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                                      _scrollDayController.jumpTo(
+                                        toOffset,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ],
+                            )),
+                            const SizedBox(
+                              width: 16,
                             ),
-                          )
-                              : Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              color: Colors.black,
-                              child: ListView.separated(
-                                controller: _scrollDayController,
-                                shrinkWrap: true,
-                                // Let the ListView know how many items it needs to build.
-                                itemCount: dayNumbers.length,
-                                // Provide a builder function. This is where the magic happens.
-                                // Convert each item into a widget based on the type of item it is.
-                                itemBuilder: (context, i) {
-                                  return Container(
-                                    color: Colors.red,
-                                    child: ListTile(
-                                      focusColor: Colors.red.shade900,
-                                      title: Center(
-                                          child: Text(
-                                              "${dayNumbers[i].toString().padLeft(3, '0')}",
-                                              style: const TextStyle(fontSize: 40)
-                                          )
+                            Center(child: Row(
+                              children: [
+                                Image.asset('assets/images/moon.png',height: 100,),
+                                (nightNumberPicked)? Text(""):IconButton(
+                                  icon: Icon(Icons.arrow_upward),
+                                  onPressed: () async {
+                                    double toOffset = 0;
+                                    for (int i = 1; i < scrollableNumbers.length; i ++){
+                                      if (_scrollNightController.offset /60 > scrollableNumbers[i]){
+                                        toOffset = scrollableNumbers[i] * 60;
+                                      }
+                                    }
+                                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                                      _scrollNightController.jumpTo(
+                                        toOffset,
+                                      );
+                                    });
+                                  },
+                                ),
+                                (nightNumberPicked)? Text(""):IconButton(
+                                  icon: Icon(Icons.arrow_downward),
+                                  onPressed: () async {
+                                    double toOffset = 900;
+                                    for (int i = 1; i < scrollableNumbers.length; i ++){
+                                      if (_scrollNightController.offset /60 < scrollableNumbers[i]){
+                                        toOffset = scrollableNumbers[i] * 60;
+                                        break;
+                                      }
+                                    }
+                                    SchedulerBinding.instance.addPostFrameCallback((_) {
+                                      _scrollNightController.jumpTo(
+                                        toOffset,
+                                      );
+                                    });
+                                  },
+                                ),
+                              ],
+                            )),
+                          ],
+                        ),
+                      ),
+                      SizedBox(
+                        height: 500,
+                        child: Stack(
+                          children: [
+
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                dayNumberPicked
+                                    ? Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    color: Colors.black,
+                                    child: Container(
+                                      color: Colors.red,
+                                      child: ListTile(
+                                        focusColor: Colors.red.shade900,
+                                        title: Center(
+                                            child: Text(
+                                              "${mm.play.dayNumber.toString().padLeft(3, '0')}",
+                                              style: const TextStyle(fontSize: 40),
+                                            )
+                                        ),
+                                        onTap: () {
+                                          if (!random) {
+                                            setState(() {
+                                              dayNumberPicked = false;
+                                            });
+                                          }
+                                        },
                                       ),
-                                      onTap: () {
-                                        if (!random) {
-                                          setState(() {
-                                            dayNumberPicked = true;
-                                            mm.play.dayNumber = dayNumbers[i];
-                                          });
-                                        }
+                                    )
+                                  ),
+                                )
+                                    : Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
+                                    color: Colors.black,
+                                    child: ListView.separated(
+                                      controller: _scrollDayController,
+                                      shrinkWrap: true,
+                                      // Let the ListView know how many items it needs to build.
+                                      itemCount: dayNumbers.length,
+                                      // Provide a builder function. This is where the magic happens.
+                                      // Convert each item into a widget based on the type of item it is.
+                                      itemBuilder: (context, i) {
+                                        return Container(
+                                          color: Colors.red,
+                                          child: ListTile(
+                                            focusColor: Colors.red.shade900,
+                                            title: Center(
+                                                child: Text(
+                                                    "${dayNumbers[i].toString().padLeft(3, '0')}",
+                                                    style: const TextStyle(fontSize: 40)
+                                                )
+                                            ),
+                                            onTap: () {
+                                              if (!random) {
+                                                setState(() {
+                                                  dayNumberPicked = true;
+                                                  mm.play.dayNumber = dayNumbers[i];
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      separatorBuilder: (context, index) {
+                                        return const Divider(
+                                          color: Colors.black,
+                                          height: 4,
+                                          thickness: 4,
+                                        );
                                       },
                                     ),
-                                  );
-                                },
-                                separatorBuilder: (context, index) {
-                                  return const Divider(
+                                  ),
+                                ),
+                                const SizedBox(
+                                  width: 16,
+                                ),
+                                nightNumberPicked
+                                    ? Expanded(
+                                  child: Container(
+                                      padding: const EdgeInsets.all(5),
+                                      color: Colors.black,
+                                      child: Container(
+                                        color: Colors.blue,
+                                        child: ListTile(
+                                          focusColor: Colors.blue.shade900,
+                                          title: Center(
+                                              child: Text(
+                                                "${mm.play.nightNumber.toString().padLeft(3, '0')}",
+                                                style: const TextStyle(fontSize: 40),
+                                              )
+                                          ),
+                                          onTap: () {
+                                            if (!random) {
+                                              setState(() {
+                                                nightNumberPicked = false;
+                                              });
+                                            }
+                                          },
+                                        ),
+                                      )
+                                  ),
+                                )
+                                    : Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(5),
                                     color: Colors.black,
-                                    height: 4,
-                                    thickness: 4,
-                                  );
-                                },
+                                    child: ListView.separated(
+                                      controller: _scrollNightController,
+                                      shrinkWrap: true,
+                                      // Let the ListView know how many items it needs to build.
+                                      itemCount: nightNumbers.length,
+                                      // Provide a builder function. This is where the magic happens.
+                                      // Convert each item into a widget based on the type of item it is.
+                                      itemBuilder: (context, i) {
+                                        return Container(
+                                          color: Colors.blue,
+                                          child: ListTile(
+                                            focusColor: Colors.blue.shade900,
+                                            title: Center(
+                                                child: Text(
+
+                                                  "${nightNumbers[i].toString().padLeft(3, '0')}",
+                                                  style: const TextStyle(fontSize: 40),
+                                                )),
+                                            onTap: () {
+                                              if (!random) {
+                                                setState(() {
+                                                  nightNumberPicked = true;
+                                                  mm.play.nightNumber = nightNumbers[i];
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      separatorBuilder: (context, index) {
+                                        return const Divider(
+                                          color: Colors.black,
+                                          height: 4,
+                                          thickness: 4,
+                                        );
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      Divider(),
+                      ListTile(
+                        title: Text("Apuesta:"),
+                        subtitle: Wrap(
+                          spacing: 2.0,
+                          children: getPrices(),
+                          alignment: WrapAlignment.spaceBetween,
+                        ),
+                      ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ElevatedButton(
+                                  onPressed: () async {
+                                    if(dayNumberPicked && nightNumberPicked && betNumberPicked){
+                                      mm.play.padlock = mm.padlock;
+                                      mm.play.confirmed = true;
+                                      if (random){
+                                        mm.updatePlay(model: mm.play).then((value) {
+                                          mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
+                                          resetScreen();
+                                        });
+                                      }else{
+                                        mm.createPlay(model: mm.play).then((value) {
+                                          mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
+                                          resetScreen();
+                                        });
+                                      }
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text("Terminaste tu jugada")),
+                                      );
+                                    }else{
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text("Debe seleccionar los dos numeros y la apuesta")),
+                                      );
+                                    }
+                                  },
+                                  child: const Text("Confirmar jugada y seguir jugando"),
                               ),
                             ),
                           ),
-                          const SizedBox(
-                            width: 16,
-                          ),
-                          nightNumberPicked
-                              ? Expanded(
-                            child: Container(
-                                padding: const EdgeInsets.all(5),
-                                color: Colors.black,
-                                child: Container(
-                                  color: Colors.blue,
-                                  child: ListTile(
-                                    focusColor: Colors.blue.shade900,
-                                    title: Center(
-                                        child: Text(
-                                          "${mm.play.nightNumber.toString().padLeft(3, '0')}",
-                                          style: const TextStyle(fontSize: 40),
-                                        )
-                                    ),
-                                    onTap: () {
-                                      if (!random) {
-                                        setState(() {
-                                          nightNumberPicked = false;
-                                        });
-                                      }
-                                    },
-                                  ),
-                                )
-                            ),
-                          )
-                              : Expanded(
-                            child: Container(
-                              padding: const EdgeInsets.all(5),
-                              color: Colors.black,
-                              child: ListView.separated(
-                                controller: _scrollNightController,
-                                shrinkWrap: true,
-                                // Let the ListView know how many items it needs to build.
-                                itemCount: nightNumbers.length,
-                                // Provide a builder function. This is where the magic happens.
-                                // Convert each item into a widget based on the type of item it is.
-                                itemBuilder: (context, i) {
-                                  return Container(
-                                    color: Colors.blue,
-                                    child: ListTile(
-                                      focusColor: Colors.blue.shade900,
-                                      title: Center(
-                                          child: Text(
 
-                                            "${nightNumbers[i].toString().padLeft(3, '0')}",
-                                            style: const TextStyle(fontSize: 40),
-                                          )),
-                                      onTap: () {
-                                        if (!random) {
-                                          setState(() {
-                                            nightNumberPicked = true;
-                                            mm.play.nightNumber = nightNumbers[i];
-                                          });
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: ElevatedButton(
+                                  onPressed: () async {
+                                    if((dayNumberPicked && nightNumberPicked && betNumberPicked) || (getPrices().isEmpty)){
+                                      mm.padlock.playing = false;
+                                      if (getPrices().isNotEmpty) {
+                                        mm.play.confirmed = true;
+                                        if (random) {
+                                          await mm.updatePlay(model: mm.play);
+                                        } else {
+                                          await mm.createPlay(model: mm.play);
                                         }
-                                      },
-                                    ),
-                                  );
-                                },
-                                separatorBuilder: (context, index) {
-                                  return const Divider(
-                                    color: Colors.black,
-                                    height: 4,
-                                    thickness: 4,
-                                  );
-                                },
+                                      }
+                                      mm.updatePadlock(model: mm.padlock).then((value) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                              content: Text("Terminaste tu jugada")),
+                                        );
+                                        Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
+                                      });
+                                    }else{
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                            content: Text("Debe seleccionar los dos numeros y la apuesta")),
+                                      );
+                                    }
+                                  },
+                                  child: const Text("Confirmar Jugada"),
                               ),
                             ),
                           ),
                         ],
                       ),
-                    ],
+                    ]
+                ),
+                Visibility(
+                  visible: _isVisible,
+                  child: Container(
+                      color: Colors.black54,
+                      width: double.infinity,
+                      height: double.infinity,
+                      child: Center(
+                        child: Image.asset('assets/gifs/dice_rolling.gif', height: 60, width: 60,color: Colors.red,colorBlendMode: BlendMode.modulate),
+                      )
                   ),
                 ),
-                Divider(),
-                ListTile(
-                  title: Text("Apuesta:"),
-                  subtitle: Wrap(
-                    spacing: 2.0,
-                    children: getPrices(),
-                    alignment: WrapAlignment.spaceBetween,
-                  ),
-                ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                            onPressed: () async {
-                              if(dayNumberPicked && nightNumberPicked && betNumberPicked){
-                                mm.play.padlock = mm.padlock;
-                                mm.play.confirmed = true;
-                                if (random){
-                                  mm.updatePlay(model: mm.play).then((value) {
-                                    mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
-                                    resetScreen();
-                                  });
-                                }else{
-                                  mm.createPlay(model: mm.play).then((value) {
-                                    mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
-                                    resetScreen();
-                                  });
-                                }
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("Terminaste tu jugada")),
-                                );
-                              }else{
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("Debe seleccionar los dos numeros y la apuesta")),
-                                );
-                              }
-                            },
-                            child: const Text("Confirmar jugada y seguir jugando"),
-                        ),
-                      ),
-                    ),
-
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: ElevatedButton(
-                            onPressed: () async {
-                              if((dayNumberPicked && nightNumberPicked && betNumberPicked) || (getPrices().isEmpty)){
-                                mm.padlock.playing = false;
-                                if (getPrices().isNotEmpty) {
-                                  mm.play.confirmed = true;
-                                  if (random) {
-                                    await mm.updatePlay(model: mm.play);
-                                  } else {
-                                    await mm.createPlay(model: mm.play);
-                                  }
-                                }
-                                mm.updatePadlock(model: mm.padlock).then((value) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                        content: Text("Terminaste tu jugada")),
-                                  );
-                                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
-                                });
-                              }else{
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("Debe seleccionar los dos numeros y la apuesta")),
-                                );
-                              }
-                            },
-                            child: const Text("Confirmar Jugada"),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ]
-          ),
-          Visibility(
-            visible: _isVisible,
-            child: Container(
-                color: Colors.black54,
-                width: double.infinity,
-                height: double.infinity,
-                child: Center(
-                    child: Image.asset('assets/gifs/dice_rolling.gif', height: 60, width: 60,color: Colors.red,colorBlendMode: BlendMode.modulate),
-                )
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

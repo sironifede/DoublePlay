@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
+import '../shimmer.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({Key? key,}): super(key: key);
@@ -162,21 +163,6 @@ class _HomePageState extends State<HomePage> {
               Navigator.of(context).pushNamed(Routes.user);
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: () async {
-              await mm.fetchUser();
-              mm.showContinuePlayingDialog = await mm.isUserPlaying();
-              if (mm.showContinuePlayingDialog){
-                mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
-              }
-              mm.updateDisabledNumbers();
-              mm.updateDisabledBets();
-              if (mm.user.isStaff || mm.user.isSuperuser){
-                mm.updateCollectors();
-              }
-            },
-          ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -186,91 +172,106 @@ class _HomePageState extends State<HomePage> {
         },
         label: Text("CERRAR SESION"),
       ),
-      body:SingleChildScrollView(
-        child: Wrap(
-            alignment: WrapAlignment.spaceBetween,
-          children:generateColumn()
+      body:RefreshIndicator(
+        onRefresh: _refresh,
+        child: Shimmer(
+          child: ShimmerLoading(
+            isLoading: (mm.status == ModelsStatus.updating),
+            child: ListView(
+              children: [
+                Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    children:generateColumn()
+                ),
+              ]
+            ),
+          ),
         ),
       )
     );
   }
+  Future<void> _refresh() async {
+    await mm.fetchUser();
+    mm.showContinuePlayingDialog = await mm.isUserPlaying();
+    if (mm.showContinuePlayingDialog){
+      mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+    }
+    mm.updateDisabledNumbers();
+    mm.updateDisabledBets();
+    if (mm.user.isStaff || mm.user.isSuperuser){
+      mm.updateCollectors();
+    }
+  }
   List<Widget> generateColumn(){
     List<Widget> list = [];
-    if (mm.status == ModelsStatus.updating ){
-      list.add(LinearProgressIndicator());
-    }else {
-
-      list.add(
-          OptionWidget(
-            onPressed: (){
-              Navigator.of(context).pushNamed(Routes.month);
-            },
-            text: "Jugar",
-            backgroundImage: "assets/images/ruleta.png",
-          ),
-      );
-      list.add(
-          OptionWidget(
-            onPressed: (){
-              mm.selectUser(mm.user);
-              Navigator.of(context).pushNamed(Routes.plays);
-            },
-            text: "Ver jugadas",
-            backgroundImage: "assets/images/jugadas.jpg",
-          )
-      );
-
-      if (mm.user != null) {
-        if (mm.user.isStaff) {
-          list.add(
-              OptionWidget(
-                onPressed: (){
-                  Navigator.of(context).pushNamed(Routes.users);
-                },
-                text: "Administrar Usuarios",
-                backgroundImage: "assets/images/users.png",
-              ),
-          );
-          list.add(
+    list.add(
+        OptionWidget(
+          onPressed: (){
+            Navigator.of(context).pushNamed(Routes.month);
+          },
+          text: "Jugar",
+          backgroundImage: "assets/images/ruleta.png",
+        ),
+    );
+    list.add(
+        OptionWidget(
+          onPressed: (){
+            mm.selectUser(mm.user);
+            Navigator.of(context).pushNamed(Routes.plays);
+          },
+          text: "Ver jugadas",
+          backgroundImage: "assets/images/jugadas.jpg",
+        )
+    );
+    if (mm.user != null) {
+      if (mm.user.isStaff) {
+        list.add(
             OptionWidget(
               onPressed: (){
-                Navigator.of(context).pushNamed(Routes.collectors);
+                Navigator.of(context).pushNamed(Routes.users);
               },
-              text: "Administrar colectores",
+              text: "Administrar Usuarios",
               backgroundImage: "assets/images/users.png",
             ),
-          );
-          list.add(
-              OptionWidget(
-                onPressed: (){
-                  Navigator.of(context).pushNamed(Routes.disabledNumbers);
-                },
-                text: "Agregar/Remover numeros",
-                backgroundImage: "assets/images/numbers.jpg",
-              )
-          );
-          list.add(
-              OptionWidget(
-                onPressed: (){
-                  Navigator.of(context).pushNamed(Routes.disabledBets);
-                },
-                text: "Agregar/Remover apuestas",
-                backgroundImage: "assets/images/numbers.jpg",
-              )
-          );
-          list.add(
-              OptionWidget(
-                onPressed: () {
-                  Navigator.of(context).pushNamed(Routes.app);
-                },
-                text: "Habilitar/Deshabilirtar app",
-                backgroundImage: "assets/images/switch.webp",
-              )
-          );
-        }
+        );
+        list.add(
+          OptionWidget(
+            onPressed: (){
+              Navigator.of(context).pushNamed(Routes.collectors);
+            },
+            text: "Administrar colectores",
+            backgroundImage: "assets/images/users.png",
+          ),
+        );
+        list.add(
+            OptionWidget(
+              onPressed: (){
+                Navigator.of(context).pushNamed(Routes.disabledNumbers);
+              },
+              text: "Agregar/Remover numeros",
+              backgroundImage: "assets/images/numbers.jpg",
+            )
+        );
+        list.add(
+            OptionWidget(
+              onPressed: (){
+                Navigator.of(context).pushNamed(Routes.disabledBets);
+              },
+              text: "Agregar/Remover apuestas",
+              backgroundImage: "assets/images/numbers.jpg",
+            )
+        );
+        list.add(
+            OptionWidget(
+              onPressed: () {
+                Navigator.of(context).pushNamed(Routes.app);
+              },
+              text: "Habilitar/Deshabilirtar app",
+              backgroundImage: "assets/images/switch.webp",
+            )
+        );
       }
     }
-
     return list;
   }
 }
