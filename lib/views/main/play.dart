@@ -96,22 +96,31 @@ class _PlayPageState extends State<PlayPage> {
     var list = <Widget>[];
     int bet = 0;
     if (dayNumberPicked && nightNumberPicked){
-
+      int cant = 0;
       for (var play in mm.plays){
-        if (mm.play.nightNumber == play.nightNumber && mm.play.dayNumber == play.dayNumber && mm.play.type == play.type){
-          print("bet: ${play.bet}");
-          print("padlock: ${play.padlock.id}");
+        if (mm.play.nightNumber == play.nightNumber && mm.play.dayNumber == play.dayNumber){
+          print("${play.toUpdateMap()}");
+          bet += play.bet;
+        }
+        if (mm.play.dayNumber == play.nightNumber && mm.play.nightNumber == play.dayNumber && [PlayType.JDA,PlayType.JD].contains(play.type)){
+          print("${play.toUpdateMap()}");
+          bet += play.bet;
+        }
+        if (mm.play.dayNumber == play.nightNumber && mm.play.nightNumber == play.dayNumber && [PlayType.JSA,PlayType.JS].contains(play.type) && [PlayType.JDA,PlayType.JD].contains(mm.play.type)){
+          print("${play.toUpdateMap()}");
           bet += play.bet;
         }
       }
     }
+    int sub = 0;
+    if ([PlayType.JDA,PlayType.JD].contains(mm.play.type)){
+      sub = 100;
+    }
     print(bet);
-    int mult = (mm.play.type == PlayType.JDA || mm.play.type == PlayType.JD)? 2: 1;
     for (var price in prices) {
 
-      if ((bet + price) * mult <= 200 || random) {
-        if (!((mm.play.type == PlayType.JDA || mm.play.type == PlayType.JD) &&
-            price == 200)) {
+      if ((bet + price - sub) <= 100 ) {
+        if (([PlayType.JDA,PlayType.JD].contains(mm.play.type) && price == 200) || ![PlayType.JDA,PlayType.JD].contains(mm.play.type) && price != 200) {
           list.add(
               OutlinedButton(
                   onPressed: () {
@@ -147,19 +156,11 @@ class _PlayPageState extends State<PlayPage> {
 
   void getRandomNumbers()
   {
-    List a=[];
-    var rng = Random();
-    for (var i = 0; i < 6; i++) {
-      a.add(rng.nextInt(9));
-      // print();
-    }
+
     _isVisible = true;
     dayNumberPicked = false;
     nightNumberPicked = false;
     random = true;
-    mm.play.dayNumber = a[0]*100 + a[1]*10 + a[2];
-    mm.play.nightNumber = a[3]*100 + a[4]*10 + a[5];
-
     mm.play.type = (mm.play.type == PlayType.JD || mm.play.type == PlayType.JDA)? PlayType.JDA: PlayType.JSA;
     if (mm.padlock.id != mm.play.padlock.id){
       mm.createPlay(model: mm.play).then((value) {

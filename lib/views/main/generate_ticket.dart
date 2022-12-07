@@ -94,7 +94,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
       if (i.listers.contains(mm.padlock.user.id)){
         list.add(Text("CT#${i.id} LT#${mm.padlock.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
         list.add(Text("MES:${months[mm.padlock.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
-        list.add(Text("${mm.padlock.createdAt!.toLocal()}",style: TextStyle( color: Colors.black)));
+        list.add(Text("${mm.padlock.updatedAt!.toLocal().toString().split(".")[0]}",style: TextStyle( color: Colors.black)));
         list.add(
             SizedBox(
               height: 32,
@@ -102,31 +102,17 @@ class _GenerateTicketState extends State<GenerateTicket> {
         );
         int total = 0;
         for (var play in mm.plays){
-          if (play.type == PlayType.JS || play.type == PlayType.JSA) {
-            list.add(
-                Row(
-                  children: [
-                    Text("${play.dayNumber.toString().padLeft(3, '0')}-${play
-                        .nightNumber.toString().padLeft(3, '0')} ${play.type
-                        ?.name}  -  ${play.bet}\$",
-                        style: TextStyle(fontSize: 20, color: Colors.black)),
-                  ],
-                )
-            );
-            total += play.bet;
-          }else{
-            list.add(
-                Row(
-                  children: [
-                    Text("${play.dayNumber.toString().padLeft(3, '0')}-${play
-                        .nightNumber.toString().padLeft(3, '0')} ${play.type
-                        ?.name}  -  ${play.bet}\$  X 2",
-                        style: TextStyle(fontSize: 20, color: Colors.black)),
-                  ],
-                )
-            );
-            total += play.bet * 2;
-          }
+          list.add(
+              Row(
+                children: [
+                  Text("${play.dayNumber.toString().padLeft(3, '0')}-${play
+                      .nightNumber.toString().padLeft(3, '0')} ${play.type
+                      ?.name}  -  ${play.bet}\$",
+                      style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+          total += play.bet;
         }
         list.add(
             SizedBox(

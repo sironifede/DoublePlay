@@ -188,7 +188,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                             print(value);
                             User user = User.fromMap(value);
 
-                            await mm.createCollector(model: Collector(id: 0, listers: [], user: user));
+                            await mm.createCollector(model: Collector(id: 0, listers: [], user: user,moneyCollcted: false));
                           }
 
                           showDialog(

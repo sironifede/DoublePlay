@@ -32,24 +32,24 @@ class _CollectorPageState extends State<CollectorPage> {
     });
   }
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
-  DateTime mostRecentSaturday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -6));
+  DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
   Future<void> _refresh() async {
     collectorElement = CollectorElement(collector: mm.selectedCollector);
     await mm.updateUsers();
     await mm.updateCollectors();
     mm.padlocks = [];
-    DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 7)));
-    DateTime saturday = mostRecentSaturday(DateTime.now().subtract(Duration(days: 7)));
-    saturday = saturday.add(Duration(hours: 23, minutes: 59, seconds: 59));
+    DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
+    DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
+    sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
+    print(monday);
     print(sunday);
-    print(saturday);
     mm.padlocks = [];
     for (var user in mm.users) {
       if (mm.selectedCollector.listers.contains(user.id)) {
         await mm.updatePadlocks(
             loadMore: true,
             filter: PadlockFilter(user: user.id.toString(),
-                creAtGt: saturday.toLocal().toString(),
+                creAtGt: monday.toLocal().toString(),
                 creAtLt: sunday.toLocal().toString()));
       }
     }
@@ -90,24 +90,29 @@ class _CollectorPageState extends State<CollectorPage> {
     int money = 0;
     int moneyN = 0;
     for ( var play in mm.plays){
-      if (play.type == PlayType.JS || play.type == PlayType.JSA){
-        money += play.bet;
-      }else {
-        money += play.bet * 2;
-      }
-
+      money += play.bet;
     }
-    DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 7)));
-    DateTime saturday = mostRecentSaturday(DateTime.now().subtract(Duration(days: 7)));
-    saturday = saturday.add(Duration(hours: 23, minutes: 59, seconds: 59));
+    DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
+    DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
+    sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
     print(moneyN);
-    list.add(
-      ListTile(
-        leading: Text(""),
-        title: Text("Dinero recaudado de la ultima semana: ${money}\$"),
-        subtitle: Text("Desde: ${sunday.toLocal()}\nHasta: ${saturday.toLocal()}"),
 
-      )
+    list.add(
+      CheckboxListTile(
+        title: Text("Dinero recolectado"),
+        onChanged:(mm.user.isStaff || mm.user.isSuperuser)? (b){
+          mm.selectedCollector.moneyCollcted = !mm.selectedCollector.moneyCollcted;
+          mm.updateCollector(model: mm.selectedCollector);
+        }:null,
+        value: mm.selectedCollector.moneyCollcted,
+      ),
+    );
+    list.add(
+        ListTile(
+          title: Text("Dinero recaudado de la ultima semana: ${money}\$"),
+          subtitle: Text("Desde: ${monday.toLocal()}\nHasta: ${sunday.toLocal()}"),
+
+        )
     );
     List<Widget> users = [];
     users.add(Divider());
@@ -117,11 +122,7 @@ class _CollectorPageState extends State<CollectorPage> {
         int money = 0;
         for (var play in mm.plays) {
           if (play.padlock.user.id == user.id){
-            if (play.type == PlayType.JS || play.type == PlayType.JSA){
-              money += play.bet;
-            }else {
-              money += play.bet * 2;
-            }
+            money += play.bet;
           }
         }
         users.add(

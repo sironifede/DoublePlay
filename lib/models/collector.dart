@@ -7,12 +7,14 @@ import 'model.dart';
 class Collector extends Model{
 
   List<int> listers;
+  bool moneyCollcted;
   User user;
   Collector(
       {
         required int id,
         required this.listers,
         required this.user,
+        required this.moneyCollcted,
       }
       ):super(id: id);
 
@@ -23,6 +25,7 @@ class Collector extends Model{
       "listers": listers.toString(),
       "user_id": user.id.toString(),
       "user": user.id.toString(),
+      "money_collected": moneyCollcted.toString(),
     };
   }
   @override
@@ -31,6 +34,7 @@ class Collector extends Model{
       "listers":listers.toString(),
       "user_id": user.id.toString(),
       "user": user.id.toString(),
+      "money_collected": moneyCollcted.toString(),
     };
   }
 
@@ -49,6 +53,7 @@ class Collector extends Model{
       id: data["user"],
       listers: listers,
       user: user,
+      moneyCollcted:data["money_collected"],
     );
   }
 }

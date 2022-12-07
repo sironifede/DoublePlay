@@ -6,6 +6,7 @@ import '../../filters/filters.dart';
 import '../../filters/play.dart';
 import '../../models/models.dart';
 import '../../models/models_manager.dart';
+import '../shimmer.dart';
 
 class PlaysPage extends StatefulWidget {
   const PlaysPage({Key? key}) : super(key: key);
@@ -64,21 +65,26 @@ class _PlaysPageState extends State<PlaysPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(const Duration(milliseconds: 1),() async {
-      DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 7)));
-      DateTime saturday = mostRecentSaturday(DateTime.now().subtract(Duration(days: 7)));
-      saturday = saturday.add(Duration(hours: 23, minutes: 59, seconds: 59));
+      DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
+      DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
+      sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
 
-      padlockFilter.creAtGt.value = sunday.toString();
-      padlockFilter.creAtLt.value = saturday.toString();
-      refresh();
+      padlockFilter.creAtGt.value = monday.toString();
+      padlockFilter.creAtLt.value = sunday.toString();
+      _refresh();
     });
   }
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
-  DateTime mostRecentSaturday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -6));
-  void refresh() async {
+  DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
+  Future<void> _refresh() async {
     padlockFilter.user.value = mm.selectedUser.id.toString();
     await mm.updatePadlocks(filter: padlockFilter);
-    playModelOptions = await mm.updatePlays(filter: playFilter);
+    mm.plays = [];
+    for (var padlock in mm.padlocks){
+      playFilter.padlock.value = padlock.id.toString();
+      playModelOptions = await mm.updatePlays(filter: playFilter,loadMore: true);
+    }
+
 
   }
   @override
@@ -94,11 +100,7 @@ class _PlaysPageState extends State<PlaysPage> {
       if (!selectingElements){
         elements.add(PlayElement(play: play));
       }
-      if (play.type == PlayType.JS || play.type == PlayType.JSA){
-        totalBet += play.bet;
-      }else{
-        totalBet += play.bet * 2;
-      }
+      totalBet += play.bet;
     }
 
     if (!loading) {
@@ -113,8 +115,6 @@ class _PlaysPageState extends State<PlaysPage> {
         });
       }
     }
-
-
 
     return Scaffold(
         appBar: AppBar(
@@ -259,12 +259,7 @@ class _PlaysPageState extends State<PlaysPage> {
                     }
                   }
                 }
-            ):IconButton(
-                icon: const Icon(Icons.refresh),
-                onPressed: (){
-                  refresh();
-                }
-            ),
+            ):Text(""),
             PopupMenuButton<String>(
               onSelected: handleClick,
               itemBuilder: (BuildContext context) {
@@ -278,10 +273,16 @@ class _PlaysPageState extends State<PlaysPage> {
             ),
           ],
         ),
-        body: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: getList(),
+        body:
+        RefreshIndicator(
+          onRefresh: _refresh,
+          child:Shimmer(
+            child: ShimmerLoading(
+              isLoading: loading,
+              child: ListView(
+                children: getList(),
+              ),
+            ),
           ),
         ),
     );
@@ -315,15 +316,12 @@ class _PlaysPageState extends State<PlaysPage> {
           SnackBar(
               content: Text("Se han elimnado $cant jugadas")),
         );
-        refresh();
+        _refresh();
       }
     });
   }
   List<Widget> getList(){
     List<Widget> list = [];
-    if (loading){
-      list.add(const LinearProgressIndicator());
-    }
     list.add(
         ListTile(
           leading: const Icon(Icons.person),
@@ -334,9 +332,10 @@ class _PlaysPageState extends State<PlaysPage> {
 
     if (elements.isNotEmpty){
       list.add(
-          const ListTile(
+          ListTile(
             leading: Text(""),
             title: Text('Jugadas'),
+            subtitle: Text('${mm.plays.length}'),
           )
       );
       list.add(
