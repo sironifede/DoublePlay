@@ -69,17 +69,20 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     return user;
   }
-  Future<void> registerUser({String username = "", bool isSuperuser = false, bool isStaff = false, String password = "", String password2 = "",}) async {
+  Future<Map<String,dynamic>> registerUser({String username = "", bool isSuperuser = false, bool isStaff = false, String password = "", String password2 = "",}) async {
+    Map<String,dynamic> map = {};
     status = ModelsStatus.updating;
     notifyListeners();
     try {
       UserSignUp userSignUp = UserSignUp(username: username, isStaff: isStaff, isSuperuser: isSuperuser,password:password,password2:password2);
-      Map<String,dynamic> map = await postUser(user: user, userSignUp: userSignUp);
+      map = await postUser(user: user, userSignUp: userSignUp);
+
     }catch (e){
       throw e;
     }
     status = ModelsStatus.updated;
     notifyListeners();
+    return map;
   }
   Future<ModelOptions> updateUsers({Filter? filter, bool loadMore = false, int page = 1}) async {
     status = ModelsStatus.updating;

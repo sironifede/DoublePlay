@@ -1,5 +1,7 @@
 // ignore_for_file: depend_on_referenced_packages, body_might_complete_normally_nullable
 
+import 'package:bolita_cubana/models/collector.dart';
+import 'package:bolita_cubana/models/user.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/models_manager.dart';
@@ -35,10 +37,16 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
     Future.delayed(Duration(milliseconds: 1),() async {
       if (mm.user.isSuperuser) {
         setState(() {
-          userTypes.add('Superusuarios');
+          userTypes.add('Superusuario');
           userTypes.add('Admin');
         });
       }
+      if (mm.user.isStaff || mm.user.isSuperuser) {
+        setState(() {
+          userTypes.add('Colector');
+        });
+      }
+
     });
 
   }
@@ -172,9 +180,17 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                           isStaff = true;
                           isSuperuser = true;
                         }
+
                         mm.registerUser(username: usernameController.text, isSuperuser: isSuperuser, isStaff: isStaff, password: passwordController.text, password2: password2Controller.text)
-                            .then((value) {
-                          mm.status = ModelsStatus.updated;
+                            .then((value) async {
+                              mm.status = ModelsStatus.updated;
+                          if (userType == "Colector") {
+                            print(value);
+                            User user = User.fromMap(value);
+
+                            await mm.createCollector(model: Collector(id: 0, listers: [], user: user));
+                          }
+
                           showDialog(
                               context: context,
                               builder: (_) {
@@ -199,6 +215,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
                               });
                           //Navigator.of(context).pushNamed(Routes., (Route<dynamic> route) => false);
                         }, onError: (error) {
+                          mm.status = ModelsStatus.updated;
                           setState(() {
                             print(error);
                             _errorUsername = (error['username'].toString() == "null")? "": error['username'][0].toString();

@@ -65,7 +65,7 @@ class User  extends Model{
       id: data["id"],
       username: data["username"],
       email: data["email"],
-      isActive: data["is_active"],
+      isActive: (data["is_active"] == null)? true: data["is_active"],
       isSuperuser: data["is_superuser"] ,
       isStaff: data["is_staff"],
       dateJoined: dateJoined,
