@@ -50,7 +50,6 @@ class _LoginPage extends State<LoginPage> {
               return AlertDialog(
                 icon: const Icon(Icons.warning),
                 title: Text("La aplicacion no esta habilitada, se podra usar cuando un administrador la habilite."),
-                content: Text("La aplicacion se cerro a las: ${mm.app.stopHour.format(context)}"),
                 actions: [
                   TextButton(
                     child: Text("ACEPTAR"),

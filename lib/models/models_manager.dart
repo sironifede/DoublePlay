@@ -35,8 +35,8 @@ class ModelsManager with ChangeNotifier {
   List<DisabledNumbers> disabledNumbers = [];
   List<DisabledBets> disabledBets = [];
   List<Collector> collectors = [];
-  Collector selectedCollector = Collector(id: 0, listers:  [], name: "");
-  App app = App(active: false, stopHour: TimeOfDay.now());
+  Collector selectedCollector = Collector(id: 0, listers:  [], user:  User());
+  App app = App(active: false, stopHour: TimeOfDay.now(), stopHour2: TimeOfDay.now());
 
   bool showContinuePlayingDialog = false;
 
@@ -208,13 +208,13 @@ class ModelsManager with ChangeNotifier {
   }
 
 
-  Future<ModelOptions> updatePadlocks({Filter? filter, bool loadMore = false, int page = 1,required User userFr,bool change = true}) async {
+  Future<ModelOptions> updatePadlocks({Filter? filter, bool loadMore = false, int page = 1,bool change = true}) async {
     status = ModelsStatus.updating;
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
       ModelsApi modelsApi = ModelsApi(token: this.user.token, modelString: "padlocks",modelType: ModelType.padlock);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.user, modelsFr: [userFr]);
+      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.user, modelsFr: users);
       if (loadMore){
         for (var model in fetchedModels.models){
           padlocks.add(model as Padlock);
@@ -310,7 +310,12 @@ class ModelsManager with ChangeNotifier {
       user = await getUser(user: user);
       user.token = token;
       user.userStatus = UserStatus.authenticated;
-
+      await updateCollectors();
+      for (var collector in collectors){
+        if (collector.user.id == user.id){
+          user.isCollector = true;
+        }
+      }
     }catch (e) {
       await updateUserStatus(e);
       print("fetchUser $e");
@@ -392,7 +397,7 @@ class ModelsManager with ChangeNotifier {
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
     try{
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page);
+      fetchedModels = await modelsApi.getModels(filter: filter, page: page,modelsFr: users, modelTypeFr: ModelType.user);
       if (loadMore){
         for (var model in fetchedModels.models){
           collectors.add(model as Collector);
@@ -402,6 +407,13 @@ class ModelsManager with ChangeNotifier {
         for (var model in fetchedModels.models){
           collectors.add(model as Collector);
         }
+      }
+      for (var collector in collectors){
+        if (collector.user.id == user.id){
+          user.isCollector = true;
+          selectedCollector = collector;
+        }
+        collector.user.isCollector = true;
       }
     }catch (e){
       collectors = [];
@@ -417,7 +429,7 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     try{
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      selectedCollector = await modelsApi.putModel(id: model.id, model: model) as Collector;
+      selectedCollector = await modelsApi.putModel(id: model.id, model: model,modelsFr: users, modelTypeFr: ModelType.user) as Collector;
     }catch (e){
       await updateUserStatus(e);
       print("updateCollector $e");
@@ -430,7 +442,7 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     try{
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      selectedCollector = await modelsApi.postModel(model: model) as Collector;
+      selectedCollector = await modelsApi.postModel(model: model,modelsFr: users, modelTypeFr: ModelType.user) as Collector;
 
     }catch (e){
       await updateUserStatus(e);
@@ -471,7 +483,7 @@ class ModelsManager with ChangeNotifier {
   }
 
   Future<bool> isUserPlaying() async {
-    await updatePadlocks(filter: PadlockFilter(user: user.id.toString()),userFr: user);
+    await updatePadlocks(filter: PadlockFilter(user: user.id.toString()));
     for (var padlock in padlocks){
       if (padlock.playing){
         this.padlock = padlock;

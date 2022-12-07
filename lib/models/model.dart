@@ -45,7 +45,9 @@ class Model{
         return App.fromMap(data);
 
       case ModelType.collector:
-        return Collector.fromMap(data);
+        print(Collector.fromMap(data, user!).toUpdateMap());
+        return Collector.fromMap(data, user!);
+
 
       case ModelType.disabledBets:
         return DisabledBets.fromMap(data);

@@ -91,7 +91,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
     }else {
 
       List<Widget> numbers = [];
-      List prices = [5, 10, 15, 20, 25, 30, 40, 50, 100, 200, 300];
+      List prices = [5, 10, 15, 20, 25, 30, 40, 50, 100, 200];
       
       for (var i in prices){
         numbers.add(

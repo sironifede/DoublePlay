@@ -50,7 +50,7 @@ class _UserPageState extends State<UserPage> {
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children:[
-                Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin": "Listero"}"),
+                Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin":(mm.selectedUser.isCollector)?"Colector":  "Listero"}"),
                 Text("Cuenta creada el: ${(mm.selectedUser.dateJoined== null)?"No se sabe": mm.selectedUser.dateJoined!.toLocal().toString().split(".")[0]}"),
                 Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin== null)?"No se sabe": mm.selectedUser.lastLogin!.toLocal().toString().split(".")[0]}"),
               ]
@@ -80,18 +80,23 @@ class _UserPageState extends State<UserPage> {
             title: Text("Opciones:"),
           )
       );
-      list.add(
-          ElevatedButton(
-              onPressed: (){
-                mm.selectUser(mm.selectedUser);
-                Navigator.of(context).pushNamed(Routes.plays);
-              },
-              child: SizedBox(
-                  width:MediaQuery.of(context).size.width/3,
-                  child: Center(child: Text("Ver jugadas"))
-              )
-          )
-      );
+      if (!mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser && !mm.selectedUser.isCollector) {
+        list.add(
+            ElevatedButton(
+                onPressed: () {
+                  mm.selectUser(mm.selectedUser);
+                  Navigator.of(context).pushNamed(Routes.plays);
+                },
+                child: SizedBox(
+                    width: MediaQuery
+                        .of(context)
+                        .size
+                        .width / 3,
+                    child: Center(child: Text("Ver jugadas"))
+                )
+            )
+        );
+      }
       /*if (mm.user.isSuperuser || (mm.user.isStaff && !mm.selectedUser.isSuperuser && !mm.selectedUser.isStaff) || (user == mm.user)){
         list.add(
             ElevatedButton(

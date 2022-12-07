@@ -15,9 +15,11 @@ class User  extends Model{
   bool isSuperuser;
   bool isStaff;
   bool isActive;
+  bool isCollector;
   DateTime? dateJoined;
   DateTime? lastLogin;
   UserStatus userStatus;
+
 
   User(
       {
@@ -28,6 +30,7 @@ class User  extends Model{
         this.isSuperuser = false,
         this.isStaff = false,
         this.isActive = true,
+        this.isCollector = false,
         this.dateJoined,
         this.lastLogin,
         this.userStatus = UserStatus.unauthenticated

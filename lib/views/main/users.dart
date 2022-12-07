@@ -26,7 +26,7 @@ class _UsersPageState extends State<UsersPage> {
   ModelOptions userModelOptions = ModelOptions(hasMore: false, page: 1);
 
   TextEditingController _usernameController = TextEditingController();
-  List<String> userTypes = <String>['Admins', 'Superusuarios', 'Listeros'];
+  List<String> userTypes = <String>['Admins', 'Superusuarios', 'Listeros', 'Colectores'];
   String userType = 'Listeros';
   UserFilter userFilter = UserFilter(isStaff: false, isSuperUser: false);
 
@@ -61,6 +61,25 @@ class _UsersPageState extends State<UsersPage> {
   }
   Future<void> _refresh() async {
     userModelOptions = await mm.updateUsers(filter: userFilter);
+    if (userType == userTypes[3]) {
+      await mm.updateCollectors();
+      List<User> users =[];
+      for (var user in mm.users){
+        if (user.isCollector){
+          users.add(user);
+        }
+      }
+      mm.users = users;
+    }else if (userType == userTypes[2]) {
+      await mm.updateCollectors();
+      List<User> users =[];
+      for (var user in mm.users){
+        if (!user.isCollector){
+          users.add(user);
+        }
+      }
+      mm.users = users;
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -152,8 +171,7 @@ class _UsersPageState extends State<UsersPage> {
                                           _usernameController.text;
                                       filtering = true;
                                       Navigator.of(context).pop();
-                                      userModelOptions = await mm.updateUsers(filter: userFilter);
-
+                                      _refresh();
                                     },
                                     child: Text("FILTRAR")
                                 )
@@ -424,7 +442,7 @@ class UserWidget extends StatelessWidget {
       subtitle: (element.deleting)?Text("Eliminando usuario..."):Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text("${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": "Listero"}"),
+          Text("${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}"),
           Text("Cuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": element.user.dateJoined!.toLocal().toString().split(".")[0]}"),
         ],
       ),

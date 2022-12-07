@@ -49,14 +49,7 @@ class _AppPageState extends State<AppPage> {
     if (mm.status == ModelsStatus.updating ){
       list.add(LinearProgressIndicator());
     }else {
-      list.add(
-          ListTile(
 
-            title: Text('Habilitada: ${(mm.app.active)? "Si": "No"}'),
-            subtitle: Text('Hora de cierre: ${mm.app.stopHour.format(context).toString()}'),
-          )
-      );
-      list.add(Divider());
       list.add(
         CheckboxListTile(
           title: Text("Aplicacion habilitada"),
@@ -71,14 +64,34 @@ class _AppPageState extends State<AppPage> {
         ListTile(
           leading: Icon(Icons.watch_later),
           title: Text("${mm.app.stopHour.format(context)}"),
-          onTap: () async {
-            TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour);
-            if (timePicked != null){
-              mm.app.stopHour = timePicked;
-              mm.updateApp();
-            }
-          },
+          trailing: ElevatedButton(
+              child: Text("HORA DE DIA"),
+              onPressed: () async {
+                TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour);
+                if (timePicked != null){
+                  mm.app.stopHour = timePicked;
+                  mm.updateApp();
+                }
+              },
+          ),
         )
+      );
+      list.add(
+          ListTile(
+            leading: Icon(Icons.watch_later),
+            title: Text("${mm.app.stopHour2.format(context)}"),
+            trailing: ElevatedButton(
+              child: Text("HORA DE NOCHE"),
+              onPressed: ()async{
+                TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour2);
+                if (timePicked != null){
+                  mm.app.stopHour2 = timePicked;
+                  mm.updateApp();
+                }
+              }
+            ),
+
+          )
       );
     }
 

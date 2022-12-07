@@ -23,16 +23,7 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      await mm.fetchUser();
-      mm.showContinuePlayingDialog = await  mm.isUserPlaying();
-      if (mm.showContinuePlayingDialog){
-        mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
-      }
-      mm.updateDisabledNumbers();
-      mm.updateDisabledBets();
-      if (mm.user.isStaff || mm.user.isSuperuser){
-        mm.updateCollectors();
-      }
+      _refresh();
     });
   }
 
@@ -84,9 +75,6 @@ class _HomePageState extends State<HomePage> {
                 icon: const Icon(Icons.warning),
                 title: Text(
                     "La aplicacion no esta habilitada, se podra usar cuando un administrador la habilite."),
-                content: Text(
-                    "La aplicacion se cerro a las: ${mm.app.stopHour.format(
-                        context)}"),
                 actions: [
                   TextButton(
                     child: Text("CERRAR SESION"),
@@ -157,6 +145,13 @@ class _HomePageState extends State<HomePage> {
         title: const Text("Inicio"),
         actions: [
           IconButton(
+            icon: Icon(Icons.help),
+            onPressed: () {
+
+              Navigator.of(context).pushNamed(Routes.help);
+            },
+          ),
+          IconButton(
             icon: Icon(Icons.person),
             onPressed: () {
               mm.selectUser(mm.user);
@@ -194,84 +189,98 @@ class _HomePageState extends State<HomePage> {
     await mm.fetchUser();
     mm.showContinuePlayingDialog = await mm.isUserPlaying();
     if (mm.showContinuePlayingDialog){
-      mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+      await mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
     }
-    mm.updateDisabledNumbers();
-    mm.updateDisabledBets();
-    if (mm.user.isStaff || mm.user.isSuperuser){
-      mm.updateCollectors();
-    }
+    await mm.updateDisabledNumbers();
+    await mm.updateDisabledBets();
+    await mm.updateUsers();
+    mm.updateCollectors();
+
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
-    list.add(
+    if (!mm.user.isStaff && !mm.user.isSuperuser && !mm.user.isCollector) {
+      list.add(
         OptionWidget(
-          onPressed: (){
+          onPressed: () {
             Navigator.of(context).pushNamed(Routes.month);
           },
           text: "Jugar",
           backgroundImage: "assets/images/ruleta.png",
         ),
-    );
-    list.add(
+      );
+      list.add(
+          OptionWidget(
+            onPressed: () {
+              mm.selectUser(mm.user);
+              Navigator.of(context).pushNamed(Routes.plays);
+            },
+            text: "Ver jugadas",
+            backgroundImage: "assets/images/jugadas.jpg",
+          )
+      );
+    }
+    if (mm.user.isCollector){
+      list.add(
         OptionWidget(
           onPressed: (){
-            mm.selectUser(mm.user);
-            Navigator.of(context).pushNamed(Routes.plays);
+            Navigator.of(context).pushNamed(Routes.collector);
           },
-          text: "Ver jugadas",
-          backgroundImage: "assets/images/jugadas.jpg",
-        )
-    );
-    if (mm.user != null) {
-      if (mm.user.isStaff) {
-        list.add(
-            OptionWidget(
-              onPressed: (){
-                Navigator.of(context).pushNamed(Routes.users);
-              },
-              text: "Administrar Usuarios",
-              backgroundImage: "assets/images/users.png",
-            ),
-        );
-        list.add(
+          text: "Ver dinero recaudado",
+          backgroundImage: "assets/images/money.png",
+
+        ),
+      );
+    }
+
+    if (mm.user.isStaff) {
+      list.add(
           OptionWidget(
             onPressed: (){
-              Navigator.of(context).pushNamed(Routes.collectors);
+              Navigator.of(context).pushNamed(Routes.users);
             },
-            text: "Administrar colectores",
+            text: "Administrar Usuarios",
             backgroundImage: "assets/images/users.png",
           ),
-        );
-        list.add(
-            OptionWidget(
-              onPressed: (){
-                Navigator.of(context).pushNamed(Routes.disabledNumbers);
-              },
-              text: "Agregar/Remover numeros",
-              backgroundImage: "assets/images/numbers.jpg",
-            )
-        );
-        list.add(
-            OptionWidget(
-              onPressed: (){
-                Navigator.of(context).pushNamed(Routes.disabledBets);
-              },
-              text: "Agregar/Remover apuestas",
-              backgroundImage: "assets/images/numbers.jpg",
-            )
-        );
-        list.add(
-            OptionWidget(
-              onPressed: () {
-                Navigator.of(context).pushNamed(Routes.app);
-              },
-              text: "Habilitar/Deshabilirtar app",
-              backgroundImage: "assets/images/switch.webp",
-            )
-        );
-      }
+      );
+      list.add(
+        OptionWidget(
+          onPressed: (){
+            Navigator.of(context).pushNamed(Routes.collectors);
+          },
+          text: "Administrar colectores",
+          backgroundImage: "assets/images/users.png",
+        ),
+      );
+      list.add(
+          OptionWidget(
+            onPressed: (){
+              Navigator.of(context).pushNamed(Routes.disabledNumbers);
+            },
+            text: "Agregar/Remover numeros",
+            backgroundImage: "assets/images/numbers.jpg",
+          )
+      );
+      list.add(
+          OptionWidget(
+            onPressed: (){
+              Navigator.of(context).pushNamed(Routes.disabledBets);
+            },
+            text: "Agregar/Remover apuestas",
+            backgroundImage: "assets/images/numbers.jpg",
+          )
+      );
+      list.add(
+          OptionWidget(
+            onPressed: () {
+              Navigator.of(context).pushNamed(Routes.app);
+            },
+            text: "Habilitar/Deshabilirtar app",
+            backgroundImage: "assets/images/switch.webp",
+          )
+      );
     }
+
     return list;
   }
 }

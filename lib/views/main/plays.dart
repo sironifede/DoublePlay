@@ -64,18 +64,26 @@ class _PlaysPageState extends State<PlaysPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(const Duration(milliseconds: 1),() async {
-      padlockFilter.user.value =  mm.selectedUser.id.toString();
-      await mm.updatePadlocks(filter: padlockFilter ,userFr: mm.selectedUser);
+      DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 7)));
+      DateTime saturday = mostRecentSaturday(DateTime.now().subtract(Duration(days: 7)));
+      saturday = saturday.add(Duration(hours: 23, minutes: 59, seconds: 59));
 
-      playModelOptions = await mm.updatePlays(filter: playFilter);
+      padlockFilter.creAtGt.value = sunday.toString();
+      padlockFilter.creAtLt.value = saturday.toString();
+      refresh();
     });
   }
+  DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
+  DateTime mostRecentSaturday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -6));
   void refresh() async {
-    await mm.updatePadlocks(filter: padlockFilter,userFr: mm.selectedUser);
+    padlockFilter.user.value = mm.selectedUser.id.toString();
+    await mm.updatePadlocks(filter: padlockFilter);
     playModelOptions = await mm.updatePlays(filter: playFilter);
+
   }
   @override
   Widget build(BuildContext context) {
+
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
     if (!selectingElements){
@@ -86,7 +94,11 @@ class _PlaysPageState extends State<PlaysPage> {
       if (!selectingElements){
         elements.add(PlayElement(play: play));
       }
-      totalBet += play.bet;
+      if (play.type == PlayType.JS || play.type == PlayType.JSA){
+        totalBet += play.bet;
+      }else{
+        totalBet += play.bet * 2;
+      }
     }
 
     if (!loading) {
@@ -162,49 +174,26 @@ class _PlaysPageState extends State<PlaysPage> {
                                         ),
                                       ],
                                     ),
-                                    TextField(
-                                      controller: _betController,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.bet.getLabelText,
-                                        hintText: playFilter.bet.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
-                                    ),
-                                    TextField(
-                                      controller: _betControllerGT,
-                                      decoration: InputDecoration(
-                                        labelText: playFilter.betGT.getLabelText,
-                                        hintText: playFilter.betGT.getHintText,
-                                      ),
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly
-                                      ], // Only numbers can be entered
-                                    ),
                                     ListTile(
-                                      title: const Text("Elegir un periodo para filtrar por fecha"),
+                                      title: ElevatedButton(
+                                        child:Text("Elegir un periodo para filtrar por fecha"),
+                                        onPressed: () async {
+                                          DateTimeRange? dateTimeRange;
+                                          if (padlockFilter.creAtGt.value != ""){
+                                            dateTimeRange = DateTimeRange(start: DateTime.parse(padlockFilter.creAtGt.value), end: DateTime.parse(padlockFilter.creAtLt.value));
+                                          }
+                                          dateTimeRange = await showDateRangePicker(context: context,initialDateRange: dateTimeRange, firstDate: DateTime(1900), lastDate: DateTime(2100));
+                                          if (dateTimeRange != null){
+                                            setState(() {
+                                              padlockFilter.creAtGt.value = dateTimeRange!.start.toString();
+                                              DateTime end = dateTimeRange.end;
+                                              end = end.add(const Duration(hours: 23, minutes: 59)) ;
+                                              padlockFilter.creAtLt.value = end.toString();
+                                            });
+                                          }
+                                        },
+                                      ),
                                       subtitle: Text("${padlockFilter.creAtGt.value} | ${padlockFilter.creAtLt.value}"),
-                                      onTap: () async {
-                                        DateTimeRange? dateTimeRange;
-                                        if (padlockFilter.creAtGt.value != ""){
-                                          dateTimeRange = DateTimeRange(start: DateTime.parse(padlockFilter.creAtGt.value), end: DateTime.parse(padlockFilter.creAtLt.value));
-                                        }
-                                        dateTimeRange = await showDateRangePicker(context: context,initialDateRange: dateTimeRange, firstDate: DateTime(1900), lastDate: DateTime(2100));
-
-                                        if (dateTimeRange != null){
-                                          setState(() {
-                                            padlockFilter.creAtGt.value = dateTimeRange!.start.toString();
-                                            DateTime end = dateTimeRange.end;
-                                            end = end.add(const Duration(hours: 23, minutes: 59)) ;
-
-                                            padlockFilter.creAtLt.value = end.toString();
-                                          });
-
-                                        }
-                                      },
                                     )
                                   ],
                                 ),
@@ -218,9 +207,8 @@ class _PlaysPageState extends State<PlaysPage> {
                                   ),
                                   TextButton(
                                       onPressed: () async {
-
                                         padlockFilter.month.value = month;
-                                        await mm.updatePadlocks(filter:padlockFilter ,userFr: mm.selectedUser);
+                                        await mm.updatePadlocks(filter:padlockFilter);
                                         playFilter.type.value = playType;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
@@ -352,16 +340,24 @@ class _PlaysPageState extends State<PlaysPage> {
           )
       );
       list.add(
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
+          ListTile(
+            leading: Text(""),
+            title: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
+            subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
           )
       );
     }else{
       list.add(
           ListTile(
+            leading: Text(""),
+            title: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
+            subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
+          )
+      );
+      list.add(
+          ListTile(
             leading: const Text(""),
-            title: Text('No hay Jugadas',style: TextStyle(color: Theme.of(context).primaryColor),),
+            title: Text('No hay Jugadas '),
           )
       );
       list.add(
@@ -384,7 +380,7 @@ class _PlaysPageState extends State<PlaysPage> {
                 onPressed: () async {
                   filtering = true;
                   playFilter.padlock.value = _padlockId.text;
-                  await mm.updatePadlocks(filter: padlockFilter ,userFr: mm.selectedUser);
+                  await mm.updatePadlocks(filter: padlockFilter);
                   mm.updatePlays(filter:playFilter).then((value) {
                     playModelOptions = value;
                   });
@@ -584,7 +580,7 @@ class PlayWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Center(child: Text("${element.play.dayNumber}")),
+                      child: Center(child: Text("${element.play.dayNumber.toString().padLeft(3, '0')}")),
                     ),
                   ),
                 ),
@@ -598,7 +594,7 @@ class PlayWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Center(child: Text("${element.play.nightNumber}")),
+                      child: Center(child: Text("${element.play.nightNumber.toString().padLeft(3, '0')}")),
                     ),
                   ),
                 ),

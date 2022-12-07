@@ -24,12 +24,16 @@ class PadlockFilter extends Filter {
     String month = "",
     String name = "",
     String phone = "",
+    String creAtLt = "",
+    String creAtGt = "",
   }) {
     this.user.value = user;
     this.playing.value = playing;
     this.month.value = month;
     this.name.value = name;
     this.phone.value = phone;
+    this.creAtLt.value = creAtLt;
+    this.creAtGt.value = creAtGt;
 
   }
 

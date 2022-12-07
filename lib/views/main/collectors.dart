@@ -56,9 +56,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      await mm.updateUsers();
-      collectorModelOptions = await mm.updateCollectors(filter: collectorFilter);
-
+      _refresh();
     });
   }
   Future<void> _refresh() async {
@@ -214,13 +212,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
             ),
           ),
         ),
-        floatingActionButton:ElevatedButton.icon(
-          onPressed: (){
-            Navigator.of(context).pushNamed(Routes.addCollector);
-          },
-          icon: const Icon(Icons.add),
-          label:  const Text("Agregar colector"),
-        )
+
     );
   }
   void removeElement(int cant){
@@ -234,7 +226,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removeCollector(model: element.collector).then((v) {
+    mm.removeUser(model: element.collector.user).then((v) {
       elements.remove(element);
       mm.collectors.remove(element.collector);
       bool continueDeleting = false;
@@ -293,42 +285,45 @@ class _CollectorsPageState extends State<CollectorsPage> {
       if (element.selected) {
         isSelectingElements = true;
       }
-      if (element.collector.id != mm.user.id) {
-        list.add(
-          CollectorWidget(
-            addUsers: (){
-              showAddDialog(element);
-            },
-            onTapUser: (User user) async {
-              element.updating = true;
-              element.collector.listers.remove(user.id);
-              await mm.updateCollector(model: element.collector);
-              element.updating = false;
-            },
-            users: mm.users,
-            element: element,
-            onTap: () {
-              if (selectingElements) {
-                setState(() {
-                  element.selected = !element.selected;
-                });
-              }
-            },
-            onLongPress: () {
-              if (!selectingElements) {
-                setState(() {
-                  selectingElements = true;
-                });
-              }
+
+      list.add(
+        CollectorWidget(
+          addUsers: (){
+            showAddDialog(element);
+          },
+          onTapUser: (User user) async {
+            element.updating = true;
+            element.collector.listers.remove(user.id);
+            await mm.updateCollector(model: element.collector);
+            element.updating = false;
+          },
+          users: mm.users,
+          element: element,
+          onTap: () {
+            if (selectingElements) {
               setState(() {
                 element.selected = !element.selected;
               });
-            } ,
-            selectingElements: selectingElements,
-          ),
-        );
-      }
+            }else{
+              mm.selectCollector(element.collector);
+              Navigator.of(context).pushNamed(Routes.collector);
+            }
+          },
+          onLongPress: () {
+            if (!selectingElements) {
+              setState(() {
+                selectingElements = true;
+              });
+            }
+            setState(() {
+              element.selected = !element.selected;
+            });
+          } ,
+          selectingElements: selectingElements,
+        ),
+      );
     }
+
     list.add(Divider());
     list.add(
       ListTile(
@@ -398,11 +393,13 @@ class _CollectorsPageState extends State<CollectorsPage> {
                 List<Widget> users = [];
                 for (var user in mm.users) {
                   bool add = true;
+                  add = !user.isCollector;
                   for (var element in elements) {
                     if (element.collector.listers.contains(user.id)){
                       add  = false;
                     }
                   }
+
                   if (add) {
                     users.add(Divider());
                     users.add(
@@ -502,14 +499,14 @@ class CollectorWidget extends StatelessWidget {
           selected: element.selected,
           onLongPress: onLongPress,
           trailing: (element.deleting || element.updating) ? CircularProgressIndicator() : null,
-          title: Text("Id: ${element.collector.id} | '${element.collector.name}'"),
+          title: Text("Id: ${element.collector.id} | '${element.collector.user.username}'"),
           subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."): Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text("${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"}"),
-              Text("Colector creado: ${(element.collector.createdAt == null)
+              Text("Colector creado: ${(element.collector.user.dateJoined == null)
                   ? "No se sabe"
-                  : element.collector.createdAt!.toLocal().toString().split(
+                  : element.collector.user.dateJoined!.toLocal().toString().split(
                   ".")[0]}"),
             ],
           ),

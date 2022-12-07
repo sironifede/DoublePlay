@@ -47,11 +47,12 @@ class _PlayPageState extends State<PlayPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async{
-      await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
+      await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
       mm.plays = [];
       for (var padlock in mm.padlocks) {
-        await mm.updatePlays(
+        mm.updatePlays(
             filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
+        print(padlock.id);
       }
       if (!mm.firstPlay){
         setState(() {
@@ -70,65 +71,82 @@ class _PlayPageState extends State<PlayPage> {
       }
     });
   }
-  List prices = [5, 10, 15, 20, 25, 30, 40, 50, 100, 200, 300];
+  resetScreen() async{
+    dayNumberPicked = false;
+    nightNumberPicked = false;
+    betNumberPicked = false;
+    random = false;
+
+    _refresh();
+  }
+  Future<void> _refresh() async {
+    await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
+    mm.plays = [];
+    for (var padlock in mm.padlocks) {
+      print(padlock.id);
+      mm.updatePlays(
+          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
+    }
+    mm.updateDisabledNumbers();
+    mm.updateDisabledBets();
+  }
+
+  List prices = [5, 10, 15, 20, 25, 30, 40, 50, 100, 200];
   List<Widget> getPrices() {
     var list = <Widget>[];
-    for (var price in prices) {
-      int spBet = 0;
-      int dpBet = 0;
+    int bet = 0;
+    if (dayNumberPicked && nightNumberPicked){
+
       for (var play in mm.plays){
-        if (play.padlock.user.id == mm.padlock.user.id && play.padlock.month == mm.padlock.month) {
-
-          if (play.confirmed) {
-
-            if (play.type == PlayType.JS || play.type == PlayType.JSA) {
-              spBet += play.bet;
-            } else {
-              dpBet += play.bet;
-            }
-          }
+        if (mm.play.nightNumber == play.nightNumber && mm.play.dayNumber == play.dayNumber && mm.play.type == play.type){
+          print("bet: ${play.bet}");
+          print("padlock: ${play.padlock.id}");
+          bet += play.bet;
         }
       }
+    }
+    print(bet);
+    int mult = (mm.play.type == PlayType.JDA || mm.play.type == PlayType.JD)? 2: 1;
+    for (var price in prices) {
 
-      int maxBet = 200;
-      int totalBet = dpBet;
-      if (mm.play.type == PlayType.JS || mm.play.type == PlayType.JSA){
-        maxBet = 100;
-        totalBet = spBet;
-      }
-      //print("totalBet: ${totalBet}");
-      if (price + totalBet <= maxBet) {
-        list.add(
-            OutlinedButton(
-                onPressed: () {
-                  if (price != mm.play.bet) {
-                    setState(() {
-                      mm.play.bet = price;
-                      betNumberPicked = true;
-                    });
-                  } else {
-                    setState(() {
-                      mm.play.bet = 0;
-                      betNumberPicked = false;
-                    });
-                  }
-                },
-                style: OutlinedButton.styleFrom(
-                  backgroundColor: (price == mm.play.bet && betNumberPicked) ? Colors.green : Colors.black,
-                  minimumSize: Size.zero, // Set this
-                  padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                ),
-                child: Text("$price\$",
-                  style: TextStyle(color: Colors.white),
-                )));
+      if ((bet + price) * mult <= 200 || random) {
+        if (!((mm.play.type == PlayType.JDA || mm.play.type == PlayType.JD) &&
+            price == 200)) {
+          list.add(
+              OutlinedButton(
+                  onPressed: () {
+                    if (price != mm.play.bet) {
+                      setState(() {
+                        mm.play.bet = price;
+                        betNumberPicked = true;
+                      });
+                    } else {
+                      setState(() {
+                        mm.play.bet = 0;
+                        betNumberPicked = false;
+                      });
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    backgroundColor: (price == mm.play.bet && betNumberPicked)
+                        ? Colors.green
+                        : Colors.black,
+                    minimumSize: Size.zero, // Set this
+                    padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  ),
+                  child: Text("$price\$",
+                    style: TextStyle(color: Colors.white),
+                  )
+              )
+          );
+        }
       }
     }
     return list;
   }
 
-  getRandomNumbers()
+  void getRandomNumbers()
   {
-
     List a=[];
     var rng = Random();
     for (var i = 0; i < 6; i++) {
@@ -141,6 +159,7 @@ class _PlayPageState extends State<PlayPage> {
     random = true;
     mm.play.dayNumber = a[0]*100 + a[1]*10 + a[2];
     mm.play.nightNumber = a[3]*100 + a[4]*10 + a[5];
+
     mm.play.type = (mm.play.type == PlayType.JD || mm.play.type == PlayType.JDA)? PlayType.JDA: PlayType.JSA;
     if (mm.padlock.id != mm.play.padlock.id){
       mm.createPlay(model: mm.play).then((value) {
@@ -200,31 +219,6 @@ class _PlayPageState extends State<PlayPage> {
 
   }
 
-  resetScreen() async{
-    dayNumberPicked = false;
-    nightNumberPicked = false;
-    betNumberPicked = false;
-    random = false;
-
-    mm.updateDisabledNumbers();
-    mm.updateDisabledBets();
-    await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
-    mm.plays = [];
-    for (var padlock in mm.padlocks) {
-      await mm.updatePlays(
-          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
-    }
-  }
-  Future<void> _refresh() async {
-    await mm.updatePadlocks(filter: PadlockFilter(user: mm.user.id.toString(),month: mm.padlock.month.toString()),userFr: mm.user);
-    mm.plays = [];
-    for (var padlock in mm.padlocks) {
-      await mm.updatePlays(
-          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
-    }
-    mm.updateDisabledNumbers();
-    mm.updateDisabledBets();
-  }
 
 
   Widget build(BuildContext context) {
@@ -275,9 +269,6 @@ class _PlayPageState extends State<PlayPage> {
                 icon: const Icon(Icons.warning),
                 title: Text(
                     "La aplicacion no esta habilitada, se podra usar cuando un administrador la habilite."),
-                content: Text(
-                    "La aplicacion se cerro a las: ${mm.app.stopHour.format(
-                        context)}"),
                 actions: [
                   TextButton(
                     child: Text("CERRAR SESION"),
@@ -319,26 +310,51 @@ class _PlayPageState extends State<PlayPage> {
               dayNumbers.toSet().difference(i.dayNumbers.toSet()).toList();
           nightNumbers =
               nightNumbers.toSet().difference(i.nightNumbers.toSet()).toList();
-          for (var i in mm.plays) {
-            if (i.confirmed) {
-              if (mm.padlock.id == i.padlock.id) {
-                dayNumbers.remove(i.dayNumber);
-                nightNumbers.remove(i.nightNumber);
-              }
-            }
-          }
           break;
         }
       }
     }
+    if (random){
+      if (mm.play.type == PlayType.JS){
+        mm.play.type = PlayType.JSA;
+      }
+      if (mm.play.type == PlayType.JD){
+        mm.play.type = PlayType.JDA;
+      }
+    }else{
+      if (mm.play.type == PlayType.JSA){
+        mm.play.type = PlayType.JS;
+      }
+      if (mm.play.type == PlayType.JDA){
+        mm.play.type = PlayType.JD;
+      }
+    }
+
 
     return Scaffold(
       appBar: AppBar(
+        leading: (getCurrentPlayLength() == 0)?IconButton(
+          icon: Icon(Icons.arrow_back_outlined),
+          onPressed: (){
+            mm.removePadlock(model: mm.padlock);
+            mm.showContinuePlayingDialog = false;
+            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
+          },
+        ): null,
         title: CustomTextButton(
           label: "${(mm.play.type == PlayType.JS || mm.play.type == PlayType.JSA)? simplePlayLabel: doublePlayLabel}${ (random)? " Aleatoria": "" }",
           onPressed: (random)? null:() {
             setState(() {
-              mm.play.type = (random)?(mm.play.type == PlayType.JS)? PlayType.JD:PlayType.JS: (mm.play.type == PlayType.JSA)? PlayType.JDA:PlayType.JSA ;
+
+              betNumberPicked = false;
+              if (mm.play.type == PlayType.JS){
+                mm.play.type = PlayType.JD;
+              }else {
+                if (mm.play.type == PlayType.JD) {
+                  mm.play.type = PlayType.JS;
+                }
+              }
+
             });
           },
           backgroundColor: Colors.black54,
@@ -350,8 +366,7 @@ class _PlayPageState extends State<PlayPage> {
           InkWell(child: Image.asset(
             'assets/gifs/dice_rolling.gif', height: 60, width: 60,color: Colors.red,colorBlendMode: BlendMode.modulate),
             onTap:(){
-              if (mm.play.nRandom >= 3 || getPrices().isEmpty) {
-
+              if (mm.play.nRandom >= 3) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text("No puedes realizar mas jugadas aleatorias.")),
@@ -376,6 +391,9 @@ class _PlayPageState extends State<PlayPage> {
                     children: [
                       (!random)? Text(""):ListTile(
                         title: Text("Intentos restatnes de la jugada aleatoria: ${3 - mm.play.nRandom}"),
+                      ),
+                      ListTile(
+                        title: Text("Cantidad de jugadas: ${getCurrentPlayLength()} de 10 jugadas"),
                       ),
                       SizedBox(
                         height: 60,
@@ -523,6 +541,7 @@ class _PlayPageState extends State<PlayPage> {
                                             onTap: () {
                                               if (!random) {
                                                 setState(() {
+                                                  betNumberPicked = false;
                                                   dayNumberPicked = true;
                                                   mm.play.dayNumber = dayNumbers[i];
                                                 });
@@ -595,6 +614,7 @@ class _PlayPageState extends State<PlayPage> {
                                             onTap: () {
                                               if (!random) {
                                                 setState(() {
+                                                  betNumberPicked = false;
                                                   nightNumberPicked = true;
                                                   mm.play.nightNumber = nightNumbers[i];
                                                 });
@@ -633,8 +653,8 @@ class _PlayPageState extends State<PlayPage> {
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton(
-                                  onPressed: () async {
-                                    if(dayNumberPicked && nightNumberPicked && betNumberPicked){
+                                  onPressed: (getCurrentPlayLength() < 9 && (dayNumberPicked && nightNumberPicked && betNumberPicked))? () async {
+
                                       mm.play.padlock = mm.padlock;
                                       mm.play.confirmed = true;
                                       if (random){
@@ -652,47 +672,36 @@ class _PlayPageState extends State<PlayPage> {
                                         SnackBar(
                                             content: Text("Terminaste tu jugada")),
                                       );
-                                    }else{
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(
-                                            content: Text("Debe seleccionar los dos numeros y la apuesta")),
-                                      );
-                                    }
-                                  },
+
+                                  }: null,
                                   child: const Text("Confirmar jugada y seguir jugando"),
                               ),
                             ),
                           ),
-
                           Expanded(
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton(
-                                  onPressed: () async {
-                                    if((dayNumberPicked && nightNumberPicked && betNumberPicked) || (getPrices().isEmpty)){
-                                      mm.padlock.playing = false;
-                                      if (getPrices().isNotEmpty) {
-                                        mm.play.confirmed = true;
-                                        if (random) {
-                                          await mm.updatePlay(model: mm.play);
-                                        } else {
-                                          await mm.createPlay(model: mm.play);
-                                        }
+                                  onPressed: ((dayNumberPicked && nightNumberPicked && betNumberPicked) || (getPrices().isEmpty && (getCurrentPlayLength() == 9 && !random)))?() async {
+
+                                    mm.padlock.playing = false;
+                                    if (getPrices().isNotEmpty ) {
+                                      mm.play.confirmed = true;
+                                      if (random) {
+                                        await mm.updatePlay(model: mm.play);
+                                      } else {
+                                        await mm.createPlay(model: mm.play);
                                       }
-                                      mm.updatePadlock(model: mm.padlock).then((value) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                              content: Text("Terminaste tu jugada")),
-                                        );
-                                        Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
-                                      });
-                                    }else{
+                                    }
+                                    mm.updatePadlock(model: mm.padlock).then((value) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
-                                            content: Text("Debe seleccionar los dos numeros y la apuesta")),
+                                            content: Text("Terminaste tu jugada")),
                                       );
-                                    }
-                                  },
+                                      Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
+                                    });
+
+                                  }: null,
                                   child: const Text("Confirmar Jugada"),
                               ),
                             ),
@@ -718,6 +727,16 @@ class _PlayPageState extends State<PlayPage> {
         ),
       ),
     );
+
+  }
+  int getCurrentPlayLength(){
+    int length = 0;
+    for (var play in mm.plays ){
+      if (play.padlock.id == mm.padlock.id){
+        length++;
+      }
+    }
+    return length;
   }
 
 }
@@ -764,4 +783,16 @@ class CustomTextButton extends StatelessWidget {
       ),
     );
   }
+}
+class Plays{
+  Plays({
+    required dayNumber,
+    required nightNumber,
+    required bet,
+    required type
+  });
+  int dayNumber = 0;
+  int nightNumber = 0;
+  int bet = 0;
+  PlayType type = PlayType.JD;
 }
