@@ -7,6 +7,8 @@ class Padlock extends Model{
   User user;
   bool playing = false;
   int month;
+  int moneyGenerated;
+  bool moneyCollected;
   String name = "";
   String phone = "";
   DateTime? createdAt;
@@ -17,6 +19,8 @@ class Padlock extends Model{
     required this.user,
     this.playing = false,
     this.month = 1,
+    this.moneyGenerated = 0,
+    this.moneyCollected = false,
     this.name = "",
     this.phone = "",
     this.createdAt,
@@ -30,6 +34,7 @@ class Padlock extends Model{
       "user": user.id.toString(),
       "playing": playing.toString(),
       "month": month.toString(),
+      "money_collected": moneyCollected.toString(),
       "name": name.toString(),
       "phone": phone.toString(),
     };
@@ -40,6 +45,7 @@ class Padlock extends Model{
     return {
       "playing": playing.toString(),
       "month": month.toString(),
+      "money_collected": moneyCollected.toString(),
       "name": name.toString(),
       "phone": phone.toString(),
     };
@@ -57,6 +63,8 @@ class Padlock extends Model{
       user: user,
       playing: data["playing"],
       month: data["month"],
+      moneyGenerated: data["money_generated"],
+      moneyCollected: data["money_collected"],
       name: data["name"],
       phone: data["phone"],
       createdAt:createdAt,

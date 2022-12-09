@@ -174,7 +174,7 @@ class PlayListTile extends StatelessWidget {
           child: Column(
             children: [
               Text("${play.dayNumber.toString().padLeft(3, '0')}-${play.nightNumber.toString().padLeft(3, '0')}", style: TextStyle(fontSize: 40)),
-              Text("${play.type?.name} - ${play.bet}\$")
+              Text("${play.type?.name} - \$${play.bet}")
             ],
           )
         /*onLongPress: onLongPress,

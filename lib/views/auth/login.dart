@@ -71,7 +71,7 @@ class _LoginPage extends State<LoginPage> {
     // Constructor de la ventana Login
     return Scaffold(
       appBar: AppBar(
-        title: Text("Double PLay - Inicio de sesion"),
+        title: Text("Double Play - Inicio de sesion"),
       ),
       body:Container(
         decoration: const BoxDecoration(

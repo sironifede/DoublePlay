@@ -1,6 +1,7 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../filters/play.dart';
@@ -341,7 +342,7 @@ class _PlaysPageState extends State<PlaysPage> {
       list.add(
           ListTile(
             leading: Text(""),
-            title: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
+            title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
             subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
           )
       );
@@ -349,7 +350,7 @@ class _PlaysPageState extends State<PlaysPage> {
       list.add(
           ListTile(
             leading: Text(""),
-            title: Text("Dinero recaudado: $totalBet\$",style:const TextStyle( fontSize: 30)),
+            title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
             subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
           )
       );
@@ -377,8 +378,17 @@ class _PlaysPageState extends State<PlaysPage> {
               suffixIcon:  IconButton(
                 icon: const Icon( Icons.search),
                 onPressed: () async {
-                  filtering = true;
-                  playFilter.padlock.value = _padlockId.text;
+                  setState(() {
+                    month = "";
+                    playType = "";
+                    filtering = true;
+                    playFilter.type.value = "";
+                    padlockFilter.creAtLt.value = "";
+                    padlockFilter.creAtGt.value = "";
+                    padlockFilter.month.value = "";
+                    playFilter.padlock.value = _padlockId.text;
+                  });
+
                   await mm.updatePadlocks(filter: padlockFilter);
                   mm.updatePlays(filter:playFilter).then((value) {
                     playModelOptions = value;
@@ -607,7 +617,7 @@ class PlayWidget extends StatelessWidget {
                           borderRadius: BorderRadius.circular(60)
                         //more than 50% of width makes circle
                       ),
-                      child: Center(child: Text("${element.play.bet}\$")),
+                      child: Center(child: Text("\$${element.play.bet}")),
                     ),
                   ),
                 ),
@@ -616,7 +626,7 @@ class PlayWidget extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": element.play.createdAt!.toLocal().toString().split(".")[0]}"),
+              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.play.createdAt!.toLocal())}"),
             )
 
           ],

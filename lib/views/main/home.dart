@@ -202,7 +202,7 @@ class _HomePageState extends State<HomePage> {
     if (!mm.user.isStaff && !mm.user.isSuperuser && !mm.user.isCollector) {
       list.add(
         OptionWidget(
-          onPressed: () {
+          onPressed:(mm.status == ModelsStatus.updating)? null : () {
             Navigator.of(context).pushNamed(Routes.month);
           },
           text: "Jugar",
@@ -211,7 +211,7 @@ class _HomePageState extends State<HomePage> {
       );
       list.add(
           OptionWidget(
-            onPressed: () {
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
               mm.selectUser(mm.user);
               Navigator.of(context).pushNamed(Routes.plays);
             },
@@ -223,7 +223,7 @@ class _HomePageState extends State<HomePage> {
     if (mm.user.isCollector){
       list.add(
         OptionWidget(
-          onPressed: (){
+          onPressed: (mm.status == ModelsStatus.updating)? null : (){
             Navigator.of(context).pushNamed(Routes.collector);
           },
           text: "Ver dinero recaudado",
@@ -236,7 +236,7 @@ class _HomePageState extends State<HomePage> {
     if (mm.user.isStaff) {
       list.add(
           OptionWidget(
-            onPressed: (){
+            onPressed: (mm.status == ModelsStatus.updating)? null : (){
               Navigator.of(context).pushNamed(Routes.users);
             },
             text: "Administrar Usuarios",
@@ -245,7 +245,7 @@ class _HomePageState extends State<HomePage> {
       );
       list.add(
         OptionWidget(
-          onPressed: (){
+          onPressed: (mm.status == ModelsStatus.updating)? null : (){
             Navigator.of(context).pushNamed(Routes.collectors);
           },
           text: "Administrar colectores",
@@ -254,7 +254,7 @@ class _HomePageState extends State<HomePage> {
       );
       list.add(
           OptionWidget(
-            onPressed: (){
+            onPressed: (mm.status == ModelsStatus.updating)? null : (){
               Navigator.of(context).pushNamed(Routes.disabledNumbers);
             },
             text: "Agregar/Remover numeros",
@@ -263,16 +263,17 @@ class _HomePageState extends State<HomePage> {
       );
       list.add(
           OptionWidget(
-            onPressed: (){
+            onPressed: (mm.status == ModelsStatus.updating)? null : (){
               Navigator.of(context).pushNamed(Routes.disabledBets);
             },
             text: "Agregar/Remover apuestas",
             backgroundImage: "assets/images/numbers.jpg",
           )
       );
+
       list.add(
           OptionWidget(
-            onPressed: () {
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
               Navigator.of(context).pushNamed(Routes.app);
             },
             text: "Habilitar/Deshabilirtar app",

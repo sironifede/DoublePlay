@@ -1,6 +1,7 @@
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
@@ -18,26 +19,29 @@ class CollectorPage extends StatefulWidget {
 
 class _CollectorPageState extends State<CollectorPage> {
   bool loading = true;
-
+  bool recolecting = false;
   late ModelsManager mm;
-  late CollectorElement collectorElement;
-
+  DateTime sunday = DateTime.now();
+  DateTime monday = DateTime.now();
 
   @override
   initState() {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
+      setState(() {
+        sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
+        monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
+        sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
+      });
       _refresh();
     });
   }
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
   DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
   Future<void> _refresh() async {
-    collectorElement = CollectorElement(collector: mm.selectedCollector);
     await mm.updateUsers();
     await mm.updateCollectors();
-    mm.padlocks = [];
     DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
     DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
     sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
@@ -46,22 +50,11 @@ class _CollectorPageState extends State<CollectorPage> {
     mm.padlocks = [];
     for (var user in mm.users) {
       if (mm.selectedCollector.listers.contains(user.id)) {
-        await mm.updatePadlocks(
+        mm.updatePadlocks(
             loadMore: true,
-            filter: PadlockFilter(user: user.id.toString(),
-                creAtGt: monday.toLocal().toString(),
-                creAtLt: sunday.toLocal().toString()));
+            filter: PadlockFilter(user: user.id.toString()));
       }
     }
-    mm.plays = [];
-    for (var padlock in mm.padlocks){
-      mm.updatePlays(loadMore: true, filter: PlayFilter(padlock: padlock.id.toString()));
-    }
-    for (var play in mm.plays){
-      print(play.id);
-    }
-
-
   }
   @override
   Widget build(BuildContext context) {
@@ -75,7 +68,7 @@ class _CollectorPageState extends State<CollectorPage> {
           onRefresh: _refresh,
           child: Shimmer(
             child: ShimmerLoading(
-              isLoading: loading,
+              isLoading: (loading && !recolecting),
               child: ListView(
                 children: getList(),
               ),
@@ -87,49 +80,76 @@ class _CollectorPageState extends State<CollectorPage> {
   }
   List<Widget> getList(){
     List<Widget> list = [];
-    int money = 0;
-    int moneyN = 0;
-    for ( var play in mm.plays){
-      money += play.bet;
-    }
-    DateTime sunday = mostRecentSunday(DateTime.now().subtract(Duration(days: 0)));
-    DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
-    sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
-    print(moneyN);
 
-    list.add(
-      CheckboxListTile(
-        title: Text("Dinero recolectado"),
-        onChanged:(mm.user.isStaff || mm.user.isSuperuser)? (b){
-          mm.selectedCollector.moneyCollcted = !mm.selectedCollector.moneyCollcted;
-          mm.updateCollector(model: mm.selectedCollector);
-        }:null,
-        value: mm.selectedCollector.moneyCollcted,
-      ),
-    );
+
+
+
+
     list.add(
         ListTile(
-          title: Text("Dinero recaudado de la ultima semana: ${money}\$"),
-          subtitle: Text("Desde: ${monday.toLocal()}\nHasta: ${sunday.toLocal()}"),
+          title: ElevatedButton(
+            child:Text("Elegir un periodo para filtrar por fecha"),
+            onPressed: () async {
+              DateTimeRange? dateTimeRange = DateTimeRange(start: monday, end: sunday);
 
+              dateTimeRange = await showDateRangePicker(context: context,initialDateRange: dateTimeRange, firstDate: DateTime(1900), lastDate: DateTime(2100));
+              if (dateTimeRange != null){
+                setState(() {
+                  monday = dateTimeRange!.start;
+                  DateTime end = dateTimeRange.end;
+                  end = end.add(const Duration(hours: 23, minutes: 59)) ;
+                  sunday = end;
+                });
+              }
+            },
+          ),
+          subtitle: Text("${DateFormat('yyyy-MMMM-dd hh:mm a').format(monday.toLocal())} \n${DateFormat('yyyy-MMMM-dd hh:mm a').format(sunday.toLocal())}"),
         )
     );
+
     List<Widget> users = [];
     users.add(Divider());
-
+    int money = 0;
+    int totalMoney = 0;
+    int moneyNotCollected = 0;
+    int moneyNotCollectedInPeriod = 0;
     for (var user in mm.users){
       if (mm.selectedCollector.listers.contains(user.id)) {
-        int money = 0;
-        for (var play in mm.plays) {
-          if (play.padlock.user.id == user.id){
-            money += play.bet;
+        money = 0;
+        moneyNotCollected = 0;
+        for (var padlock in mm.padlocks) {
+          if (padlock.user.id == user.id){
+            if (padlock.createdAt!.isAfter(monday) && padlock.createdAt!.isBefore(sunday)) {
+              money += padlock.moneyGenerated;
+              if (!padlock.moneyCollected){
+                moneyNotCollected += padlock.moneyGenerated;
+              }
+            }
+
           }
         }
         users.add(
             ListTile(
               leading: Icon(Icons.person),
               title: Text(user.username),
-              subtitle: Text("Dinero recaudado por listero: ${money}\$"),
+              subtitle: Text("Generado(periodo): \$${money}\nNo recolectado(periodo): \$${moneyNotCollected}"),
+                trailing: ElevatedButton(
+                  onPressed: (moneyNotCollected != 0 && (mm.user.isSuperuser || mm.user.isStaff))? () async {
+                    recolecting = true;
+                    for (var padlock in mm.padlocks) {
+                      if (padlock.user.id == user.id) {
+                        if (!padlock.moneyCollected) {
+                          padlock.moneyCollected = true;
+                          await mm.updatePadlock(model: padlock);
+                        }
+                      }
+                    }
+                    setState(() {
+                      recolecting = false;
+                    });
+                  }: null,
+                  child: Text("Recolectar"),
+                )
             )
         );
       }
@@ -138,22 +158,90 @@ class _CollectorPageState extends State<CollectorPage> {
         Card(
           child: ExpansionTile(
               title: ListTile(
-                title: Text("Id: ${mm.selectedCollector.id} | '${mm.selectedCollector.user.username}'"),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("${mm.selectedCollector.listers.length} ${(mm.selectedCollector.listers.length == 1)? "listero":"listeros"}"),
-                    Text("Colector creado: ${(mm.selectedCollector.user.dateJoined == null)
-                        ? "No se sabe"
-                        : mm.selectedCollector.user.dateJoined!.toLocal().toString().split(
-                        ".")[0]}"),
-                  ],
-                ),
+                title: Text("${mm.selectedCollector.user.username}"),
+                subtitle: Text("Id: ${mm.selectedCollector.id}\n${mm.selectedCollector.listers.length} ${(mm.selectedCollector.listers.length == 1)? "listero":"listeros"}\nColector creado: ${(mm.selectedCollector.user.dateJoined == null)
+                    ? "No se sabe"
+                    : DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedCollector.user.dateJoined!.toLocal())}"),
               ),
               children: users
           ),
         )
     );
+    money = 0;
+    totalMoney = 0;
+    moneyNotCollected = 0;
+    moneyNotCollectedInPeriod = 0;
+    for (var padlock in mm.padlocks) {
+      if (padlock.createdAt!.isAfter(monday) && padlock.createdAt!.isBefore(sunday)) {
+        if (!padlock.moneyCollected){
+          moneyNotCollectedInPeriod += padlock.moneyGenerated;
+        }
+        money += padlock.moneyGenerated;
+      }
+      if (!padlock.moneyCollected){
+        moneyNotCollected += padlock.moneyGenerated;
+      }
+      totalMoney += padlock.moneyGenerated;
+    }
+    list.add(
+        ListTile(
+          title: Text("Dinero generado(periodo): \$${money}"),
+        )
+    );
+    list.add(
+        ListTile(
+          title: Text("Dinero generado total: \$${totalMoney}"),
+        )
+    );
+    list.add(
+        ListTile(
+          title: Text("Dinero no recolectado(periodo): \$${moneyNotCollectedInPeriod}"),
+            trailing: ElevatedButton(
+              onPressed: (moneyNotCollectedInPeriod != 0 && (mm.user.isSuperuser || mm.user.isStaff))? () async {
+                recolecting = true;
+                for (var padlock in mm.padlocks) {
+                  if (!padlock.moneyCollected && (padlock.createdAt!.isAfter(monday) && padlock.createdAt!.isBefore(sunday))) {
+                    padlock.moneyCollected = true;
+                    await mm.updatePadlock(model: padlock);
+                  }
+                }
+                setState(() {
+                  recolecting = false;
+                });
+              }: null,
+              child: Text("Recolectar"),
+            )
+        )
+    );
+    list.add(
+        ListTile(
+            title: Text("Dinero no recolectado total: \$${moneyNotCollected}"),
+            trailing: ElevatedButton(
+              onPressed: (moneyNotCollected != 0 && (mm.user.isSuperuser || mm.user.isStaff))? () async {
+                recolecting = true;
+                for (var padlock in mm.padlocks) {
+                  if (!padlock.moneyCollected) {
+                    padlock.moneyCollected = true;
+                    await mm.updatePadlock(model: padlock);
+                  }
+                }
+                setState(() {
+                  recolecting = false;
+                });
+              }: null,
+              child: Text("Recolectar"),
+            )
+        )
+    );
+
+    if (recolecting) {
+      list.add(
+          ListTile(
+            leading: CircularProgressIndicator(),
+            title: Text("Recolectando dinero ..."),
+          )
+      );
+    }
 
     return list;
   }

@@ -1,5 +1,6 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
@@ -51,8 +52,8 @@ class _UserPageState extends State<UserPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children:[
                 Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin":(mm.selectedUser.isCollector)?"Colector":  "Listero"}"),
-                Text("Cuenta creada el: ${(mm.selectedUser.dateJoined== null)?"No se sabe": mm.selectedUser.dateJoined!.toLocal().toString().split(".")[0]}"),
-                Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin== null)?"No se sabe": mm.selectedUser.lastLogin!.toLocal().toString().split(".")[0]}"),
+                Text("Cuenta creada el: ${(mm.selectedUser.dateJoined== null)?"No se sabe":DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedUser.dateJoined!.toLocal())}"),
+                Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin== null)?"No se sabe":DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedUser.lastLogin!.toLocal())}"),
               ]
             ),
           )

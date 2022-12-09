@@ -1,6 +1,7 @@
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
@@ -324,12 +325,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
       );
     }
 
-    list.add(Divider());
-    list.add(
-      ListTile(
-        title: Text("Usuarios sin asignar un colector"),
-      )
-    );
+
     if (collectorModelOptions.hasMore){
       if (addingModels){
         list.add(
@@ -499,17 +495,11 @@ class CollectorWidget extends StatelessWidget {
           selected: element.selected,
           onLongPress: onLongPress,
           trailing: (element.deleting || element.updating) ? CircularProgressIndicator() : null,
-          title: Text("Id: ${element.collector.id} | '${element.collector.user.username}'"),
-          subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."): Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"}"),
-              Text("Colector creado: ${(element.collector.user.dateJoined == null)
-                  ? "No se sabe"
-                  : element.collector.user.dateJoined!.toLocal().toString().split(
-                  ".")[0]}"),
-            ],
-          ),
+          title: Text("${element.collector.user.username}"),
+          subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."):
+          Text("Id: ${element.collector.id}\n${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"} \nColector creado: ${(element.collector.user.dateJoined == null)
+              ? "No se sabe"
+              : DateFormat('yyyy-MMMM-dd hh:mm a').format(element.collector.user.dateJoined!.toLocal())}"),
           onTap: onTap,
         ),
         children: list

@@ -35,7 +35,7 @@ class ModelsManager with ChangeNotifier {
   List<DisabledNumbers> disabledNumbers = [];
   List<DisabledBets> disabledBets = [];
   List<Collector> collectors = [];
-  Collector selectedCollector = Collector(id: 0, listers:  [], user:  User(), moneyCollcted: false);
+  Collector selectedCollector = Collector(id: 0, listers:  [], user:  User());
   App app = App(active: false, stopHour: TimeOfDay.now(), stopHour2: TimeOfDay.now());
 
   bool showContinuePlayingDialog = false;

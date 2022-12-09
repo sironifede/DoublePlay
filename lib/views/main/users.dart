@@ -1,6 +1,7 @@
 
 import 'package:animations/animations.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
 import '../../models/models.dart';
@@ -439,13 +440,7 @@ class UserWidget extends StatelessWidget {
       onLongPress: onLongPress,
       trailing:(element.deleting)? CircularProgressIndicator(): Icon(Icons.remove_red_eye),
       title: Text(element.user.username),
-      subtitle: (element.deleting)?Text("Eliminando usuario..."):Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text("${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}"),
-          Text("Cuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": element.user.dateJoined!.toLocal().toString().split(".")[0]}"),
-        ],
-      ),
+      subtitle: (element.deleting)?Text("Eliminando usuario..."):Text("Id:${element.user.id}\n${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}\nCuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.user.dateJoined!.toLocal())}"),
       onTap: onTap,
     );
   }

@@ -114,7 +114,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
                   minimumSize: Size.zero, // Set this
                   padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 ),
-                child: Text("${i}\$",
+                child: Text("\$${i}",
                   style: TextStyle(color: Colors.white),
                 )
             )

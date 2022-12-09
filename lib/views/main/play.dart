@@ -143,7 +143,7 @@ class _PlayPageState extends State<PlayPage> {
                     minimumSize: Size.zero, // Set this
                     padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   ),
-                  child: Text("$price\$",
+                  child: Text("\$$price",
                     style: TextStyle(color: Colors.white),
                   )
               )

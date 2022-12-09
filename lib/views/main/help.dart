@@ -47,8 +47,8 @@ class _HelpPageState extends State<HelpPage> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: Text("El valor de la jugada es de un minimo de 15\$ con "
-                          "una limitacion de 100\$ si elegiste jugada doble y de 200\$ si elegiste jugada simple."),
+                      child: Text("El valor de la jugada es de un minimo de \$15 con "
+                          "una limitacion de \$100 si elegiste jugada doble y de \$200 si elegiste jugada simple."),
                     )
                   ],
                 ),
@@ -59,9 +59,9 @@ class _HelpPageState extends State<HelpPage> {
                       padding: const EdgeInsets.all(8.0),
                       child: Text("Se paga en los premios diarios 500 x 1 y en el fin de "
                           "mes que es el premio mayor 5000 x 1 ejemplo si compras la jugada "
-                          "de 50 \$ Puedes ganar diario 25,000 y el premio mayor 250,000 "
-                          "y si Compras la jugada de 100 \$ puedos ganar diario 50,000 y"
-                          " esta la opcion de la doble jugada [ DOUBLE PLAY ] que seria 200 \$"
+                          "de \$50 Puedes ganar diario 25,000 y el premio mayor 250,000 "
+                          "y si Compras la jugada de \$100 puedos ganar diario 50,000 y"
+                          " esta la opcion de la doble jugada [ DOUBLE PLAY ] que seria \$200 "
                           "el valor de la jugada y puedes ganar diario 100,000 y el premio mayor sería 1,000,000."),
                     )
                   ],
