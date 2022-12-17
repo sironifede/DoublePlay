@@ -37,7 +37,9 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
   DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
   Future<void> _refresh() async {
     mm.plays = [];
+
     await mm.updateUsers();
+    await mm.updateCollectors();
     await mm.updatePadlocks();
     List<int> padlocks = [];
     for (var padlock in mm.padlocks) {
