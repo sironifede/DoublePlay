@@ -7,6 +7,10 @@ class PadlockFilter extends Filter {
       labelText: "Listero", hintText: "Listero del candado", fieldName: "user");
   BooleanFilterField playing = BooleanFilterField(
       labelText: "Jugando", hintText: "Si sigue en una jugada",fieldName: "playing");
+  BooleanFilterField listerMoneyCollected = BooleanFilterField(
+      labelText: "", hintText: "",fieldName: "lister_money_collected");
+  BooleanFilterField collectorMoneyCollected = BooleanFilterField(
+      labelText: "", hintText: "",fieldName: "collector_money_collected");
   TextFilterField month = TextFilterField(
       labelText: "Mes", hintText: "Mes de la jugada", fieldName: "month");
   TextFilterField name = TextFilterField(
@@ -21,6 +25,8 @@ class PadlockFilter extends Filter {
   PadlockFilter({
     List<int>? users,
     bool? playing,
+    bool? listerMoneyCollected,
+    bool? collectorMoneyCollected,
     String month = "",
     String name = "",
     String phone = "",
@@ -31,6 +37,8 @@ class PadlockFilter extends Filter {
       this.user.values = users;
     }
 
+    this.listerMoneyCollected.value = listerMoneyCollected;
+    this.collectorMoneyCollected .value = collectorMoneyCollected;
     this.playing.value = playing;
     this.month.value = month;
     this.name.value = name;
@@ -46,6 +54,8 @@ class PadlockFilter extends Filter {
     List<FilterField> fields = [
       user,
       playing,
+      listerMoneyCollected,
+      collectorMoneyCollected,
       month,
       name,
       phone,

@@ -226,8 +226,16 @@ class ModelsManager with ChangeNotifier {
       ModelsApi modelsApi = ModelsApi(token: this.user.token, modelString: "padlocks",modelType: ModelType.padlock);
       fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.user, modelsFr: users);
       if (loadMore){
+        List ids = [];
+        for (var padlock in padlocks){
+          ids.add(padlock.id);
+        }
+        print(ids);
         for (var model in fetchedModels.models){
-          padlocks.add(model as Padlock);
+          if (!ids.contains((model as Padlock).id)){
+            padlocks.add(model as Padlock);
+          }
+
         }
       }else {
         padlocks = [];

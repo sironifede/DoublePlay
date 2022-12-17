@@ -44,7 +44,20 @@ class _CollectorPageState extends State<CollectorPage> {
     await mm.updateUsers();
     await mm.updateCollectors();
 
-    mm.updatePadlocks(filter: PadlockFilter(users: mm.selectedCollector.listers));
+    await mm.updatePadlocks(filter: PadlockFilter(users: mm.selectedCollector.listers,playing: false, creAtGt: startDate.toUtc().toString(), creAtLt: endDate.toUtc().toString()));
+    if (mm.user.isStaff || mm.user.isSuperuser) {
+      mm.updatePadlocks(filter: PadlockFilter(
+          users: mm.selectedCollector.listers,
+          playing: false,
+          listerMoneyCollected: true,
+          collectorMoneyCollected: false), loadMore: true);
+    }else{
+      mm.updatePadlocks(filter: PadlockFilter(
+          users: mm.selectedCollector.listers,
+          playing: false,
+          listerMoneyCollected: false,
+          collectorMoneyCollected: false), loadMore: true);
+    }
   }
   @override
   Widget build(BuildContext context) {
@@ -91,6 +104,20 @@ class _CollectorPageState extends State<CollectorPage> {
                   end = end.add(const Duration(hours: 23, minutes: 59));
                   endDate = end;
                 });
+                await mm.updatePadlocks(filter: PadlockFilter(users: mm.selectedCollector.listers,playing: false, creAtGt: startDate.toUtc().toString(), creAtLt: endDate.toUtc().toString()));
+                if (mm.user.isStaff || mm.user.isSuperuser) {
+                  mm.updatePadlocks(filter: PadlockFilter(
+                      users: mm.selectedCollector.listers,
+                      playing: false,
+                      listerMoneyCollected: true,
+                      collectorMoneyCollected: false), loadMore: true);
+                }else{
+                  mm.updatePadlocks(filter: PadlockFilter(
+                      users: mm.selectedCollector.listers,
+                      playing: false,
+                      listerMoneyCollected: false,
+                      collectorMoneyCollected: false), loadMore: true);
+                }
               }
             },
           ),
@@ -168,29 +195,46 @@ class _CollectorPageState extends State<CollectorPage> {
           ),
         )
     );
-
-    if (mm.user.isStaff || mm.user.isSuperuser) {
-      money = 0;
-      totalMoney = 0;
-      moneyNotCollected = 0;
-      moneyNotCollectedInPeriod = 0;
-      for (var padlock in mm.padlocks) {
-        if (mm.selectedCollector.listers.contains(padlock.user.id)){
-          if (padlock.createdAt!.isAfter(startDate) &&
-              padlock.createdAt!.isBefore(endDate)) {
-            if (padlock.listerMoneyCollected &&
-                !padlock.listerMoneyCollected) {
-              moneyNotCollectedInPeriod += padlock.moneyGenerated;
-            }
-            money += padlock.moneyGenerated;
+    money = 0;
+    totalMoney = 0;
+    moneyNotCollected = 0;
+    moneyNotCollectedInPeriod = 0;
+    int moneyCollectedInPeriod = 0;
+    int moneyCollected = 0;
+    for (var padlock in mm.padlocks) {
+      if (mm.selectedCollector.listers.contains(padlock.user.id)){
+        if (padlock.createdAt!.isAfter(startDate) &&
+            padlock.createdAt!.isBefore(endDate)) {
+          if (padlock.listerMoneyCollected &&
+              !padlock.collectorMoneyCollected) {
+            moneyNotCollectedInPeriod += padlock.moneyGenerated;
           }
-          if (padlock.listerMoneyCollected && !padlock.listerMoneyCollected) {
-            moneyNotCollected += padlock.moneyGenerated;
+          if (padlock.collectorMoneyCollected) {
+            moneyCollectedInPeriod += padlock.moneyGenerated;
           }
-
-          totalMoney += padlock.moneyGenerated;
+          money += padlock.moneyGenerated;
         }
+        if (padlock.createdAt!.isAfter(endDate) ||
+            padlock.createdAt!.isBefore(startDate)) {
+          if (mm.user.isCollector) {
+            if (!padlock.listerMoneyCollected) {
+              moneyNotCollected += padlock.moneyGenerated;
+            }
+          }else{
+            if (padlock.listerMoneyCollected &&!padlock.collectorMoneyCollected) {
+              moneyNotCollected += padlock.moneyGenerated;
+            }
+          }
+        }
+        if (padlock.collectorMoneyCollected) {
+          moneyCollected += padlock.moneyGenerated;
+        }
+
+        totalMoney += padlock.moneyGenerated;
       }
+    }
+    if (mm.user.isStaff || mm.user.isSuperuser) {
+
       list.add(
           ListTile(
             title: Text("Dinero generado(periodo): \$${money}"),
@@ -198,11 +242,9 @@ class _CollectorPageState extends State<CollectorPage> {
       );
       list.add(
           ListTile(
-            title: Text("Dinero recolectado (periodo): \$${money -
-                moneyNotCollectedInPeriod}"),
+            title: Text("Dinero recolectado (periodo): \$${moneyCollectedInPeriod}"),
           )
       );
-
 
       list.add(
           ListTile(
@@ -229,41 +271,39 @@ class _CollectorPageState extends State<CollectorPage> {
           )
       );
 
-      list.add(
-          ListTile(
-            title: Text("Dinero generado total: \$${totalMoney}"),
-          )
-      );
-      list.add(
-          ListTile(
-            title: Text("Dinero recolectado total: \$${totalMoney -
-                moneyNotCollected}"),
-          )
-      );
 
-      list.add(
-          ListTile(
-              title: Text(
-                  "Dinero no recolectado total: \$${moneyNotCollected}"),
-              trailing: ElevatedButton(
-                onPressed:(moneyNotCollected == 0)? null: () async {
-                  recolecting = true;
-                  for (var padlock in mm.padlocks) {
+    }
+    list.add(
+        ListTile(
+            title: Text(
+                "Dinero no recolectado fuera del periodo: \$${moneyNotCollected}"),
+            trailing: ElevatedButton(
+              onPressed:(moneyNotCollected == 0)? null: () async {
+                recolecting = true;
+
+                for (var padlock in mm.padlocks) {
+                  if (mm.user.isStaff || mm.user.isSuperuser) {
                     if (!padlock.collectorMoneyCollected &&
                         padlock.listerMoneyCollected) {
                       padlock.collectorMoneyCollected = true;
                       mm.updatePadlock(model: padlock);
                     }
+                  }else{
+                    if (!padlock.collectorMoneyCollected &&
+                        !padlock.listerMoneyCollected) {
+                      padlock.listerMoneyCollected = true;
+                      mm.updatePadlock(model: padlock);
+                    }
                   }
-                  setState(() {
-                    recolecting = false;
-                  });
-                },
-                child: Text("Recolectar"),
-              )
-          )
-      );
-    }
+                }
+                setState(() {
+                  recolecting = false;
+                });
+              },
+              child: Text("Recolectar"),
+            )
+        )
+    );
     if (recolecting) {
       list.add(
           ListTile(
