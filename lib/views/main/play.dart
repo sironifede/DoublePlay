@@ -20,6 +20,7 @@ class PlayPage extends StatefulWidget {
 class _PlayPageState extends State<PlayPage> {
 
   bool loading = false;
+  bool update = false;
   late ModelsManager mm;
 
   final ScrollController _scrollDayController = ScrollController();
@@ -49,11 +50,11 @@ class _PlayPageState extends State<PlayPage> {
     Future.delayed(Duration(milliseconds: 1),() async{
       await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
       mm.plays = [];
+      List<int> padlocks = [];
       for (var padlock in mm.padlocks) {
-        mm.updatePlays(
-            filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
-        print(padlock.id);
+        padlocks.add(padlock.id);
       }
+      mm.updatePlays(filter: PlayFilter(padlocks: padlocks),loadMore: true);
       if (!mm.firstPlay){
         setState(() {
           mm.firstPlay = false;
@@ -82,11 +83,7 @@ class _PlayPageState extends State<PlayPage> {
   Future<void> _refresh() async {
     await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
     mm.plays = [];
-    for (var padlock in mm.padlocks) {
-      print(padlock.id);
-      mm.updatePlays(
-          filter: PlayFilter(padlock: padlock.id.toString()),loadMore: true);
-    }
+    await mm.updatePlays(filter: PlayFilter(month: mm.padlock.month.toString(),padlocks: [mm.padlock.id]),);
     mm.updateDisabledNumbers();
     mm.updateDisabledBets();
   }
@@ -131,7 +128,7 @@ class _PlayPageState extends State<PlayPage> {
                       });
                     } else {
                       setState(() {
-                        mm.play.bet = 0;
+                        mm.play.bet = 1;
                         betNumberPicked = false;
                       });
                     }
@@ -190,6 +187,8 @@ class _PlayPageState extends State<PlayPage> {
         });
       });
     }else {
+
+
       mm.updatePlay(model: mm.play).then((value) {
         setState(() {
           double toOffset = mm.play.dayNumber * 60;
@@ -220,7 +219,11 @@ class _PlayPageState extends State<PlayPage> {
 
   }
 
-
+  Future<void> updatePlays() async{
+    update = false;
+    await mm.updatePlays(filter: PlayFilter(dayNumber: mm.play.dayNumber.toString(),nightNumber: mm.play.nightNumber.toString(),month: mm.padlock.month.toString(),confirmed: true),loadMore: true);
+    await mm.updatePlays(filter: PlayFilter(dayNumber: mm.play.nightNumber.toString(),nightNumber: mm.play.dayNumber.toString(),month: mm.padlock.month.toString(),confirmed: true),loadMore: true);
+  }
 
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
@@ -295,6 +298,13 @@ class _PlayPageState extends State<PlayPage> {
           }
         });
       });
+    }
+
+    if (!random && dayNumberPicked && nightNumberPicked && update){
+      Future.delayed(Duration(milliseconds: 1),(){
+        updatePlays();
+      });
+
     }
 
     for (var j in mm.disabledBets) {
@@ -542,6 +552,7 @@ class _PlayPageState extends State<PlayPage> {
                                             onTap: () {
                                               if (!random) {
                                                 setState(() {
+                                                  update = true;
                                                   betNumberPicked = false;
                                                   dayNumberPicked = true;
                                                   mm.play.dayNumber = dayNumbers[i];
@@ -615,6 +626,7 @@ class _PlayPageState extends State<PlayPage> {
                                             onTap: () {
                                               if (!random) {
                                                 setState(() {
+                                                  update = true;
                                                   betNumberPicked = false;
                                                   nightNumberPicked = true;
                                                   mm.play.nightNumber = nightNumbers[i];
@@ -699,7 +711,9 @@ class _PlayPageState extends State<PlayPage> {
                                         SnackBar(
                                             content: Text("Terminaste tu jugada")),
                                       );
-                                      Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
+                                      Future.delayed(Duration(milliseconds: 1), (){
+                                        Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
+                                      });
                                     });
 
                                   }: null,

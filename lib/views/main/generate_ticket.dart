@@ -32,7 +32,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
   }
   Future<void> _refresh() async {
     await mm.fetchUser();
-    await mm.updatePlays(filter:PlayFilter(padlock: mm.padlock.id.toString()));
+    await mm.updatePlays(filter:PlayFilter(padlocks: [mm.padlock.id]));
     await mm.updateUsers();
     mm.updateCollectors();
   }
@@ -57,7 +57,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
                     child: Padding(
                       padding: const EdgeInsets.all(8.0),
                       child: Container(
-                        height: MediaQuery.of(context).size.height - 200,
+
                         width: MediaQuery.of(context).size.width,
                         color: Colors.black,
                         child: Padding(
@@ -75,6 +75,9 @@ class _GenerateTicketState extends State<GenerateTicket> {
                       ),
                     ),
                   ),
+                  SizedBox(
+                    height: 100,
+                  )
                 ]
             ),
           ),
@@ -197,6 +200,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
           ],
         )
     );
+
 
 
 

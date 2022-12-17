@@ -78,13 +78,17 @@ class _PlaysPageState extends State<PlaysPage> {
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
   DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
   Future<void> _refresh() async {
-    padlockFilter.user.value = mm.selectedUser.id.toString();
+    padlockFilter.user.values = [mm.selectedUser.id];
     await mm.updatePadlocks(filter: padlockFilter);
-    mm.plays = [];
-    for (var padlock in mm.padlocks){
-      playFilter.padlock.value = padlock.id.toString();
-      playModelOptions = await mm.updatePlays(filter: playFilter,loadMore: true);
+    List<int> padlocks = [];
+    for (var padlock in mm.padlocks) {
+
+      padlocks.add(padlock.id);
     }
+    print(mm.padlocks.length);
+
+    playFilter.padlock.values = padlocks;
+    playModelOptions = await mm.updatePlays(filter: playFilter);
 
 
   }
@@ -194,7 +198,7 @@ class _PlaysPageState extends State<PlaysPage> {
                                           }
                                         },
                                       ),
-                                      subtitle: Text("${padlockFilter.creAtGt.value} | ${padlockFilter.creAtLt.value}"),
+                                      subtitle: Text("${padlockFilter.creAtGt.value}\n${padlockFilter.creAtLt.value}"),
                                     )
                                   ],
                                 ),
@@ -210,6 +214,12 @@ class _PlaysPageState extends State<PlaysPage> {
                                       onPressed: () async {
                                         padlockFilter.month.value = month;
                                         await mm.updatePadlocks(filter:padlockFilter);
+                                        List<int> padlocks = [];
+                                        for (var padlock in mm.padlocks) {
+                                          print(padlock.id);
+                                          padlocks.add(padlock.id);
+                                        }
+                                        playFilter.padlock.values = padlocks;
                                         playFilter.type.value = playType;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
@@ -386,7 +396,7 @@ class _PlaysPageState extends State<PlaysPage> {
                     padlockFilter.creAtLt.value = "";
                     padlockFilter.creAtGt.value = "";
                     padlockFilter.month.value = "";
-                    playFilter.padlock.value = _padlockId.text;
+                    playFilter.padlock.values = [_padlockId.text];
                   });
 
                   await mm.updatePadlocks(filter: padlockFilter);

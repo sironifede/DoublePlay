@@ -41,28 +41,16 @@ class _HomePageState extends State<HomePage> {
                 title: Text("Tu usuario ha sido deshabilitado o eliminado no puedes acceder a la app hasta que se te permita por un admin."),
                 actions: [
                   TextButton(
-                    child: Text("CERRAR SESION"),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                  TextButton(
                     child: Text("ACEPTAR"),
                     onPressed: () {
-                      SystemNavigator.pop();
-
+                      Navigator.of(context).pop();
                     },
                   ),
                 ],
               );
-            }).then((value){
-          if (value != null){
-            if (value){
-              Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-            }
-          }else{
-            SystemNavigator.pop();
-          }
+            }).then((value) {
+          Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
+
         });
       });
     }else if (mm.user.userStatus == UserStatus.appNotActive) {
@@ -77,27 +65,16 @@ class _HomePageState extends State<HomePage> {
                     "La aplicacion no esta habilitada, se podra usar cuando un administrador la habilite."),
                 actions: [
                   TextButton(
-                    child: Text("CERRAR SESION"),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                  TextButton(
                     child: Text("ACEPTAR"),
                     onPressed: () {
-                      SystemNavigator.pop();
+                      Navigator.of(context).pop();
                     },
                   ),
                 ],
               );
             }).then((value) {
-          if (value != null){
-            if (value){
               Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-            }
-          }else{
-            SystemNavigator.pop();
-          }
+
         });
       });
     }else if (mm.showContinuePlayingDialog){
@@ -110,16 +87,16 @@ class _HomePageState extends State<HomePage> {
                 icon: const Icon(Icons.warning),
                 title: Text("Ya estabas jugando"),
                 content: Text(
-                    "Nunca terminaste tu anterior jugada, ahora puedes volver a donde te habias quedado"),
+                    "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
                 actions: [
                   TextButton(
-                    child: Text("CERRAR SESION"),
+                    child: Text("DESCARTAR"),
                     onPressed: () {
                       Navigator.of(context).pop(true);
                     },
                   ),
                   TextButton(
-                    child: Text("ACEPTAR"),
+                    child: Text("SEGUIR JUGANDO"),
                     onPressed: () {
                       Navigator.of(context).pop(false);
                     },
@@ -129,12 +106,12 @@ class _HomePageState extends State<HomePage> {
             }).then((value) {
               if (value != null){
                 if (value){
-                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
+                  mm.removePadlock(model: mm.padlock);
                 }else{
                   Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
                 }
               }else{
-                Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
+                mm.removePadlock(model: mm.padlock);
               }
         });
       });
@@ -187,14 +164,17 @@ class _HomePageState extends State<HomePage> {
   }
   Future<void> _refresh() async {
     await mm.fetchUser();
-    mm.showContinuePlayingDialog = await mm.isUserPlaying();
-    if (mm.showContinuePlayingDialog){
-      await mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+    if (!mm.user.isStaff && !mm.user.isSuperuser) {
+      await mm.updateUsers();
+      await mm.updateCollectors();
+      if (!mm.user.isCollector ) {
+        mm.showContinuePlayingDialog = await mm.isUserPlaying();
+        if (mm.showContinuePlayingDialog) {
+          await mm.updatePlays(filter: PlayFilter(padlocks: [mm.padlock.id]));
+        }
+      }
     }
-    await mm.updateDisabledNumbers();
-    await mm.updateDisabledBets();
-    await mm.updateUsers();
-    mm.updateCollectors();
+
 
   }
   List<Widget> generateColumn(){

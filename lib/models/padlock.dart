@@ -8,7 +8,8 @@ class Padlock extends Model{
   bool playing = false;
   int month;
   int moneyGenerated;
-  bool moneyCollected;
+  bool listerMoneyCollected;
+  bool collectorMoneyCollected;
   String name = "";
   String phone = "";
   DateTime? createdAt;
@@ -20,7 +21,8 @@ class Padlock extends Model{
     this.playing = false,
     this.month = 1,
     this.moneyGenerated = 0,
-    this.moneyCollected = false,
+    this.listerMoneyCollected = false,
+    this.collectorMoneyCollected = false,
     this.name = "",
     this.phone = "",
     this.createdAt,
@@ -31,10 +33,10 @@ class Padlock extends Model{
   Map<String, dynamic> toUpdateMap(){
     return {
       "id": id.toString(),
-      "user": user.id.toString(),
       "playing": playing.toString(),
       "month": month.toString(),
-      "money_collected": moneyCollected.toString(),
+      "lister_money_collected": listerMoneyCollected.toString(),
+      "collector_money_collected": collectorMoneyCollected.toString(),
       "name": name.toString(),
       "phone": phone.toString(),
     };
@@ -45,7 +47,8 @@ class Padlock extends Model{
     return {
       "playing": playing.toString(),
       "month": month.toString(),
-      "money_collected": moneyCollected.toString(),
+      "lister_money_collected": listerMoneyCollected.toString(),
+      "collector_money_collected": collectorMoneyCollected.toString(),
       "name": name.toString(),
       "phone": phone.toString(),
     };
@@ -64,7 +67,8 @@ class Padlock extends Model{
       playing: data["playing"],
       month: data["month"],
       moneyGenerated: data["money_generated"],
-      moneyCollected: data["money_collected"],
+      listerMoneyCollected: data["lister_money_collected"],
+      collectorMoneyCollected: data["collector_money_collected"],
       name: data["name"],
       phone: data["phone"],
       createdAt:createdAt,

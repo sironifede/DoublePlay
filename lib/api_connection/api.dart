@@ -54,6 +54,9 @@ class ModelsApi {
         throw Exceptions.forbidden;
       }
       if (response.statusCode == 400){
+        Map listMap;
+        listMap = jsonDecode(utf8.decode(response.bodyBytes));
+        print("listmap: $listMap");
         throw Exceptions.badRequest;
       }
       print("statusCode: ${response.statusCode}");

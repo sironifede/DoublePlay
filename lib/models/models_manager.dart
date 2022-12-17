@@ -150,8 +150,15 @@ class ModelsManager with ChangeNotifier {
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
       fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.padlock, modelsFr: padlocks);
       if (loadMore){
+        List playsId = [];
+        for (var play in plays){
+          playsId.add(play.id);
+        }
         for (var model in fetchedModels.models){
-          plays.add(model as Play);
+          if (!playsId.contains((model as Play).id)){
+            plays.add(model as Play);
+          }
+
         }
       }else {
         plays = [];
@@ -269,6 +276,7 @@ class ModelsManager with ChangeNotifier {
     status = ModelsStatus.updating;
     notifyListeners();
     try{
+      print(this.padlock.toUpdateMap());
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
       this.padlock = await modelsApi.putModel(id: model.id, model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
       print(this.padlock.toUpdateMap());
@@ -313,12 +321,6 @@ class ModelsManager with ChangeNotifier {
       user = await getUser(user: user);
       user.token = token;
       user.userStatus = UserStatus.authenticated;
-      await updateCollectors();
-      for (var collector in collectors){
-        if (collector.user.id == user.id){
-          user.isCollector = true;
-        }
-      }
     }catch (e) {
       await updateUserStatus(e);
       print("fetchUser $e");
@@ -486,9 +488,12 @@ class ModelsManager with ChangeNotifier {
   }
 
   Future<bool> isUserPlaying() async {
-    await updatePadlocks(filter: PadlockFilter(user: user.id.toString()));
+    await updatePadlocks(filter: PadlockFilter(users: [user.id]));
+    print("user ${user.id}");
     for (var padlock in padlocks){
-      if (padlock.playing){
+
+      if (padlock.playing && padlock.user.id == user.id){
+        print("padlock: ${padlock.id}");
         this.padlock = padlock;
         return true;
       }

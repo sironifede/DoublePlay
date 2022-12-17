@@ -29,7 +29,7 @@ class _PadlockPageState extends State<PadlockPage> {
     });
   }
   Future<void> _refresh() async {
-    mm.updatePlays(filter: PlayFilter(padlock: mm.padlock.id.toString()));
+    mm.updatePlays(filter: PlayFilter(padlocks: [mm.padlock.id]));
     setState(() {
       print(mm.padlock.toUpdateMap());
       _nameController..text = mm.padlock.name;
@@ -149,7 +149,11 @@ class _PadlockPageState extends State<PadlockPage> {
           ],
         )
     );
-
+    list.add(
+      SizedBox(
+        height: 100,
+      )
+    );
 
 
     return list;

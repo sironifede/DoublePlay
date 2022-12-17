@@ -7,7 +7,8 @@ class Filter{
 
 enum FilterFieldType {
   bool,
-  str
+  str,
+  list
 }
 
 class FilterField {
@@ -73,5 +74,25 @@ class BooleanFilterField extends FilterField{
   get getChoice{
     dynamic value = (this.value == null)? "Ambos": (this.value!)? "Si" : "No";
     return value;
+  }
+}
+
+class ListFilterField extends FilterField{
+  List values = [];
+
+  ListFilterField({
+    required labelText,
+    required hintText,
+    required fieldName,
+  }):super(labelText: labelText, hintText: hintText,fieldName:fieldName, type: FilterFieldType.list);
+
+  @override
+  get getValue{
+    String str = "";
+
+    for (var value in values){
+      str += "$_fieldName=$value&";
+    }
+    return str;
   }
 }

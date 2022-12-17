@@ -3,7 +3,7 @@ import 'filter.dart';
 class PadlockFilter extends Filter {
 
 
-  TextFilterField user = TextFilterField(
+  ListFilterField user = ListFilterField(
       labelText: "Listero", hintText: "Listero del candado", fieldName: "user");
   BooleanFilterField playing = BooleanFilterField(
       labelText: "Jugando", hintText: "Si sigue en una jugada",fieldName: "playing");
@@ -19,7 +19,7 @@ class PadlockFilter extends Filter {
 
 
   PadlockFilter({
-    String user = "",
+    List<int>? users,
     bool? playing,
     String month = "",
     String name = "",
@@ -27,7 +27,10 @@ class PadlockFilter extends Filter {
     String creAtLt = "",
     String creAtGt = "",
   }) {
-    this.user.value = user;
+    if (users != null){
+      this.user.values = users;
+    }
+
     this.playing.value = playing;
     this.month.value = month;
     this.name.value = name;
@@ -51,12 +54,19 @@ class PadlockFilter extends Filter {
     ];
 
     for (var field in fields) {
-      try{
-        DateTime date = DateTime.parse(field.getValue);
-        filterStr += "${field.getFieldName}=${date.toLocal()}&";
-      }catch(e){
-        filterStr += "${field.getFieldName}=${field.getValue}&";
+      if (field.runtimeType.toString() == "ListFilterField"){
+        filterStr += "${field.getValue}";
+
+      }else{
+        try{
+          DateTime date = DateTime.parse(field.getValue);
+          filterStr += "${field.getFieldName}=${date.toUtc()}&";
+        }catch(e){
+
+          filterStr += "${field.getFieldName}=${field.getValue}&";
+        }
       }
+
     }
     return filterStr;
   }
