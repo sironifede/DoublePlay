@@ -147,10 +147,24 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
           if (collector.listers.contains(user.id)){
             List<Widget> plays = [];
             for (var play in mm.plays){
-              if (play.padlock.user.id == user.id){
+              bool addPlay = false;
+              if ([PlayType.JDA, PlayType.JD].contains(play.type)){
+                if (play.dayNumber.toString() == _nightNumberController.text || play.nightNumber.toString() ==  _dayNumberController.text){
+                  addPlay = true;
+                }
+              }
+              if (play.dayNumber.toString() == _dayNumberController.text || play.nightNumber.toString() ==  _nightNumberController.text){
+                addPlay = true;
+              }
+              if (play.padlock.user.id == user.id && addPlay){
                 plays.add(
                     Card(
                         child: ListTile(
+                          onTap: (){
+
+                            mm.padlock = play.padlock;
+                            Navigator.of(context).pushNamed(Routes.padlock);
+                          },
                           title: Column(
                             crossAxisAlignment:CrossAxisAlignment.start,
                             children: [

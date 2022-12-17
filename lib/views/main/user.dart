@@ -49,16 +49,25 @@ class _UserPageState extends State<UserPage> {
           ListTile(
             title: Text('Usuario: ${mm.selectedUser.username}'),
             subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children:[
-                Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin":(mm.selectedUser.isCollector)?"Colector":  "Listero"}"),
-                Text("Cuenta creada el: ${(mm.selectedUser.dateJoined== null)?"No se sabe":DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedUser.dateJoined!.toLocal())}"),
-                Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin== null)?"No se sabe":DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedUser.lastLogin!.toLocal())}"),
-              ]
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("Tipo de usuario: ${(mm.selectedUser.isSuperuser)
+                      ? "Superusuario"
+                      : (mm.selectedUser.isStaff) ? "Admin" : (mm.selectedUser
+                      .isCollector) ? "Colector" : "Listero"}"),
+                  Text("Cuenta creada el: ${(mm.selectedUser.dateJoined == null)
+                      ? "No se sabe"
+                      : DateFormat('yyyy-MMMM-dd hh:mm a').format(
+                      mm.selectedUser.dateJoined!.toLocal())}"),
+                  Text("Ultimo inicio de sesion: ${(mm.selectedUser.lastLogin ==
+                      null) ? "No se sabe" : DateFormat('yyyy-MMMM-dd hh:mm a')
+                      .format(mm.selectedUser.lastLogin!.toLocal())}"),
+                ]
             ),
           )
       );
-      if (mm.user.isSuperuser || (mm.user.isStaff && !mm.user.isSuperuser && !mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser)){
+      if (mm.user.isSuperuser || (mm.user.isStaff && !mm.user.isSuperuser &&
+          !mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser)) {
         list.add(
             CheckboxListTile(
                 title: Text('Usuario activo: '),
@@ -81,7 +90,8 @@ class _UserPageState extends State<UserPage> {
             title: Text("Opciones:"),
           )
       );
-      if (!mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser && !mm.selectedUser.isCollector) {
+      if (!mm.selectedUser.isStaff && !mm.selectedUser.isSuperuser &&
+          !mm.selectedUser.isCollector) {
         list.add(
             ElevatedButton(
                 onPressed: () {
@@ -110,70 +120,77 @@ class _UserPageState extends State<UserPage> {
         );
       }*/
 
-      if (mm.selectedUser == mm.user){
+      if (mm.selectedUser == mm.user) {
         print("si es el mismmoooooooooooooooo");
         list.add(
             ElevatedButton(
                 onPressed: () async {
                   mm.user = User();
-                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-                },
-                child: SizedBox(
-                    width:MediaQuery.of(context).size.width/3,
-                    child: Center(child: Text("Cerrar sesion"))
-                )
-            )
-        );
-      }
-      if (!((!mm.user.isSuperuser && (mm.selectedUser.isSuperuser || mm.selectedUser.isStaff))&& mm.selectedUser != mm.user)) {
-        list.add(
-            ElevatedButton(
-                onPressed: () async {
-                  bool? confirmDelete = await showDialog(
-                      context: context,
-                      builder: (_) {
-                        return AlertDialog(
-                          title: Text(
-                              "Estas seguro de que quieres elimiar este usuario?"),
-                          actions: [
-                            TextButton(
-                              child: Text("CANCELAR"),
-                              onPressed: () {
-                                Navigator.of(context).pop(false);
-                              },
-                            ),
-                            TextButton(
-                              child: Text("ACEPTAR"),
-                              onPressed: () {
-                                Navigator.of(context).pop(true);
-                              },
-                            ),
-                          ],
-                        );
-                      });
-                  if (confirmDelete != null) {
-                    if (confirmDelete) {
-                      bool sameUser = await mm.removeUser(model: mm.selectedUser);
-                      if (sameUser) {
-                        mm.user = User();
-                        Navigator.of(context).pushNamedAndRemoveUntil(
-                            Routes.welcome, (Route<dynamic> route) => false);
-                      }
-                      Navigator.of(context).pop();
-                      mm.updateUsers(filter: UserFilter(
-                          isStaff: false, isSuperUser: false));
-                    }
-                  }
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                      Routes.welcome, (Route<dynamic> route) => false);
                 },
                 child: SizedBox(
                     width: MediaQuery
                         .of(context)
                         .size
                         .width / 3,
-                    child: Center(child: Text("Eliminar usuario"))
+                    child: Center(child: Text("Cerrar sesion"))
                 )
             )
         );
+      }
+      if (mm.selectedUser.id != mm.user.id) {
+        if (mm.user.isSuperuser || (mm.user.isStaff && !(mm.selectedUser.isSuperuser || mm.selectedUser.isStaff))) {
+          list.add(
+              ElevatedButton(
+                  onPressed: () async {
+                    bool? confirmDelete = await showDialog(
+                        context: context,
+                        builder: (_) {
+                          return AlertDialog(
+                            title: Text(
+                                "Estas seguro de que quieres elimiar este usuario?"),
+                            actions: [
+                              TextButton(
+                                child: Text("CANCELAR"),
+                                onPressed: () {
+                                  Navigator.of(context).pop(false);
+                                },
+                              ),
+                              TextButton(
+                                child: Text("ACEPTAR"),
+                                onPressed: () {
+                                  Navigator.of(context).pop(true);
+                                },
+                              ),
+                            ],
+                          );
+                        });
+                    if (confirmDelete != null) {
+                      if (confirmDelete) {
+                        bool sameUser = await mm.removeUser(
+                            model: mm.selectedUser);
+                        if (sameUser) {
+                          mm.user = User();
+                          Navigator.of(context).pushNamedAndRemoveUntil(
+                              Routes.welcome, (Route<dynamic> route) => false);
+                        }
+                        Navigator.of(context).pop();
+                        mm.updateUsers(filter: UserFilter(
+                            isStaff: false, isSuperUser: false));
+                      }
+                    }
+                  },
+                  child: SizedBox(
+                      width: MediaQuery
+                          .of(context)
+                          .size
+                          .width / 3,
+                      child: Center(child: Text("Eliminar usuario"))
+                  )
+              )
+          );
+        }
       }
     }
     return list;
