@@ -260,6 +260,15 @@ class _HomePageState extends State<HomePage> {
             backgroundImage: "assets/images/switch.webp",
           )
       );
+      list.add(
+          OptionWidget(
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
+              Navigator.of(context).pushNamed(Routes.searchPlay);
+            },
+            text: "Ingresar Jugada",
+            backgroundImage: "assets/images/ruleta.png",
+          )
+      );
     }
 
     return list;

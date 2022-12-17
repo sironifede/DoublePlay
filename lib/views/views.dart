@@ -16,3 +16,4 @@ export 'package:bolita_cubana/views/main/disabled_bets.dart';
 export 'package:bolita_cubana/views/main/generate_ticket.dart';
 export 'package:bolita_cubana/views/main/collectors.dart';
 export 'package:bolita_cubana/views/main/collector.dart';
+export 'package:bolita_cubana/views/main/search_play.dart';

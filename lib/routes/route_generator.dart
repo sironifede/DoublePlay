@@ -43,6 +43,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const AppPage());
       case Routes.welcome:
         return MaterialPageRoute(builder: (_) => const WelcomePage());
+      case Routes.searchPlay:
+        return MaterialPageRoute(builder: (_) => const SearchPlayPage());
       case Routes.help:
         return MaterialPageRoute(builder: (_) => const HelpPage());
       default:
@@ -61,6 +63,7 @@ abstract class Routes{
   static const String help = '/help';
   static const String plays = '/plays';
   static const String play = '/play';
+  static const String searchPlay = '/searchPlay';
   static const String collectors = '/collectors';
   static const String collector = '/collector';
   static const String disabledNumbers = '/disabledNumbers';
@@ -69,4 +72,5 @@ abstract class Routes{
   static const String generateTicket = '/generateTicket';
   static const String month = '/month';
   static const String app = '/app';
+
 }
