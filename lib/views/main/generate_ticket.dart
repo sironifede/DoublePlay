@@ -102,7 +102,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
         collector = i;
       }
     }
-    list.add(Text("CT#${collector?.id} LT#${mm.padlock.user.id}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
+    list.add(Text("CT#${(collector == null)? "no tiene": collector.user.username} LT#${mm.padlock.user.username}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
     list.add(Text("MES:${months[mm.padlock.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
     list.add(Text("${DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.padlock.updatedAt!.toLocal())}",style: TextStyle( color: Colors.black)));
     list.add(

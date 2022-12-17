@@ -209,7 +209,7 @@ class _CollectorPageState extends State<CollectorPage> {
               title: Text(
                   "Dinero no recolectado(periodo): \$${moneyNotCollectedInPeriod}"),
               trailing: ElevatedButton(
-                onPressed: () async {
+                onPressed: (moneyNotCollectedInPeriod == 0)? null:() async {
                   recolecting = true;
                   for (var padlock in mm.padlocks) {
                     if (!padlock.collectorMoneyCollected &&
@@ -246,7 +246,7 @@ class _CollectorPageState extends State<CollectorPage> {
               title: Text(
                   "Dinero no recolectado total: \$${moneyNotCollected}"),
               trailing: ElevatedButton(
-                onPressed: () async {
+                onPressed:(moneyNotCollected == 0)? null: () async {
                   recolecting = true;
                   for (var padlock in mm.padlocks) {
                     if (!padlock.collectorMoneyCollected &&
