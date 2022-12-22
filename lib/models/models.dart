@@ -9,5 +9,6 @@ export 'package:bolita_cubana/models/padlock.dart';
 export 'package:bolita_cubana/models/model.dart';
 export 'package:bolita_cubana/models/collector.dart';
 export 'package:bolita_cubana/models/models_manager.dart';
+export 'package:bolita_cubana/models/month.dart';
 
 

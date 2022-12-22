@@ -5,12 +5,13 @@ import 'package:bolita_cubana/views/views.dart';
 import 'package:flutter/material.dart';
 
 enum ModelType{
-   disabledNumbers,
+  disabledNumbers,
   disabledBets,
   play,
   padlock,
   user,
   collector,
+  month,
   app
 }
 
@@ -26,17 +27,17 @@ class Model{
   Map<String, dynamic> toCreateMap() {
     return {};
   }
-  factory Model.fromMap(Map<String, dynamic> data, ModelType models,{Padlock? padlock, User? user}){
+  factory Model.fromMap(Map<String, dynamic> data, ModelType models){
     switch(models){
 
       case ModelType.disabledNumbers:
         return DisabledNumbers.fromMap(data);
 
       case ModelType.play:
-        return Play.fromMap(data, padlock!);
+        return Play.fromMap(data);
 
       case ModelType.padlock:
-        return Padlock.fromMap(data, user!);
+        return Padlock.fromMap(data);
 
       case ModelType.user:
         return User.fromMap(data);
@@ -45,12 +46,13 @@ class Model{
         return App.fromMap(data);
 
       case ModelType.collector:
-        print(Collector.fromMap(data, user!).toUpdateMap());
-        return Collector.fromMap(data, user!);
-
+        return Collector.fromMap(data);
 
       case ModelType.disabledBets:
         return DisabledBets.fromMap(data);
+
+      case ModelType.month:
+        return Month.fromMap(data);
     }
   }
 

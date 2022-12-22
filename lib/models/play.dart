@@ -4,17 +4,20 @@ import 'package:bolita_cubana/models/padlock.dart';
 import 'model.dart';
 
 enum PlayType{
+  // ignore: constant_identifier_names
   JDA,
+  // ignore: constant_identifier_names
   JD,
   // ignore: constant_identifier_names
   JSA,
+  // ignore: constant_identifier_names
   JS
 }
 class Play extends Model{
-  Padlock padlock;
-  bool confirmed = false;
+  int padlock;
+  bool confirmed;
   int nRandom;
-  PlayType? type;
+  PlayType type;
   int dayNumber;
   int nightNumber;
   int bet;
@@ -22,14 +25,14 @@ class Play extends Model{
   DateTime? updatedAt;
 
   Play({
-    int id = 0,
+    required int id,
     required this.padlock,
-    this.confirmed = false,
-    this.nRandom = 0,
-    this.type = PlayType.JS,
-    this.dayNumber = 1,
-    this.nightNumber = 1,
-    this.bet = 1,
+    required this.confirmed,
+    required this.nRandom,
+    required this.type,
+    required this.dayNumber,
+    required this.nightNumber,
+    required this.bet,
     this.createdAt,
     this.updatedAt,
     }):super(id: id);
@@ -39,7 +42,7 @@ class Play extends Model{
   Map<String, dynamic> toCreateMap() {
     return {
       "confirmed": confirmed.toString(),
-      "type": (type == PlayType.JS)? "JS": (type == PlayType.JSA)? "JSA": (type == PlayType.JD)? "JD": "JDA",
+      "type": type.name,
       "day_number": dayNumber.toString(),
       "night_number": nightNumber.toString(),
       "bet": bet.toString(),
@@ -50,17 +53,18 @@ class Play extends Model{
   Map<String, dynamic> toUpdateMap(){
     return {
       "id": id.toString(),
-      "padlock": padlock.id.toString(),
+      "padlock": padlock.toString(),
       "confirmed": confirmed.toString(),
-      "type": (type == PlayType.JS)? "JS": (type == PlayType.JSA)? "JSA": (type == PlayType.JD)? "JD": "JDA",
+      "type":type.name,
       "day_number": dayNumber.toString(),
       "night_number": nightNumber.toString(),
       "bet": bet.toString(),
     };
   }
 
-  factory Play.fromMap(Map<String, dynamic> data, Padlock padlock){
-    PlayType play = PlayType.JS;
+  factory Play.fromMap(Map<String, dynamic> data){
+    PlayType play = PlayType.values[data["type"]];;
+    /*
     if (data["type"] == "JSA") {
       play = PlayType.JSA;
     } else if (data["type"] == "JD") {
@@ -68,6 +72,7 @@ class Play extends Model{
     } else if (data["type"] == "JDA") {
       play = PlayType.JDA;
     }
+    */
     String date = (data["created_at"] == null) ? "" : data["created_at"];
     DateTime? createdAt = (data["created_at"] == null) ? null : DateTime.utc(
         int.parse(date.split("-")[0]), int.parse(date.split("-")[1]),
@@ -88,10 +93,9 @@ class Play extends Model{
 
     return Play(
       id: data["id"],
-      padlock: padlock,
+      padlock: data["padlock"],
       confirmed: data["confirmed"],
       nRandom: data["n_random"],
-
       type: play,
       dayNumber: data["day_number"],
       nightNumber: data["night_number"],

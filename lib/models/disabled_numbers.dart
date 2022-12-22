@@ -17,9 +17,8 @@ class DisabledNumbers  extends Model{
   @override
   Map<String, dynamic> toUpdateMap(){
     return {
-
-      "day_numbers": "${dayNumbers}",
-      "night_numbers": "${nightNumbers}",
+      "day_numbers": dayNumbers.toString(),
+      "night_numbers": nightNumbers.toString(),
       "month": month.toString(),
     };
   }
