@@ -13,7 +13,8 @@ enum ModelType{
   user,
   collector,
   month,
-  app
+  app,
+  help
 }
 
 class Model{
@@ -54,6 +55,9 @@ class Model{
 
       case ModelType.month:
         return Month.fromMap(data);
+
+      case ModelType.help:
+        return Help.fromMap(data);
     }
   }
 

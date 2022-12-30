@@ -24,9 +24,16 @@ class UserFilter extends Filter{
   @override
   String getFilterStr(){
     String filterStr = "?";
-    List<FilterField> fields = [username,isSuperUser,isStaff,dateJoined,dateJoinedGt];
+    List<FilterField> fields = [
+      super.idIn,
+      username,
+      isSuperUser,
+      isStaff,
+      dateJoined,
+      dateJoinedGt
+    ];
     for (var field in fields) {
-      filterStr += "${field.getFieldName}=${field.getValue}&";
+      filterStr += "${field.getHeader}";
     }
     return filterStr;
   }

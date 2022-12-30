@@ -52,6 +52,7 @@ class PadlockFilter extends Filter {
   String getFilterStr() {
     String filterStr = "?";
     List<FilterField> fields = [
+      super.idIn,
       user,
       playing,
       listerMoneyCollected,
@@ -64,19 +65,7 @@ class PadlockFilter extends Filter {
     ];
 
     for (var field in fields) {
-      if (field.runtimeType.toString() == "ListFilterField"){
-        filterStr += "${field.getValue}";
-
-      }else{
-        try{
-          DateTime date = DateTime.parse(field.getValue);
-          filterStr += "${field.getFieldName}=${date.toUtc()}&";
-        }catch(e){
-
-          filterStr += "${field.getFieldName}=${field.getValue}&";
-        }
-      }
-
+      filterStr += "${field.getHeader}";
     }
     return filterStr;
   }

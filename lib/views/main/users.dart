@@ -1,5 +1,7 @@
 
 import 'package:animations/animations.dart';
+import 'package:bolita_cubana/api_connection/api.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -24,7 +26,7 @@ class _UsersPageState extends State<UsersPage> {
   bool selectingElements = false;
   List<UserElement> elements = [];
   late ModelsManager mm;
-  ModelOptions userModelOptions = ModelOptions(hasMore: false, page: 1);
+  ModelOptions userModelOptions = ModelOptions(fetchedModels: FetchedModels(models: [], hasMore: false),hasError: false, page: 1);
 
   TextEditingController _usernameController = TextEditingController();
   List<String> userTypes = <String>['Admins', 'Superusuarios', 'Listeros', 'Colectores'];
@@ -61,26 +63,20 @@ class _UsersPageState extends State<UsersPage> {
     });
   }
   Future<void> _refresh() async {
-    userModelOptions = await mm.updateUsers(filter: userFilter);
-    if (userType == userTypes[3]) {
-      await mm.updateCollectors();
-      List<User> users =[];
-      for (var user in mm.users){
-        if (user.isCollector){
-          users.add(user);
-        }
-      }
-      mm.users = users;
-    }else if (userType == userTypes[2]) {
-      await mm.updateCollectors();
-      List<User> users =[];
-      for (var user in mm.users){
-        if (!user.isCollector){
-          users.add(user);
-        }
-      }
-      mm.users = users;
+    userModelOptions = await mm.updateModels(modelType: ModelType.user, filter: userFilter);
+
+    await mm.updateModels(modelType: ModelType.collector);
+    List<int> collectors =[];
+    for (var collector in mm.collectors){
+      collectors.add(collector.id);
     }
+    for (var user in mm.users){
+      if (collectors.contains(user.id)){
+        user.isCollector = true;
+      }
+    }
+
+
   }
   @override
   Widget build(BuildContext context) {
@@ -88,7 +84,30 @@ class _UsersPageState extends State<UsersPage> {
     if (!selectingElements){
       elements = [];
       for (var user in mm.users) {
-        elements.add(UserElement(user: user));
+        if (user.username.contains(userFilter.username.value)) {
+          if (userType == userTypes[0]) {
+            if (user.isStaff && !user.isSuperuser) {
+              elements.add(UserElement(user: user));
+            }
+          }
+          if (userType == userTypes[1]) {
+            if (user.isStaff && user.isSuperuser) {
+              elements.add(UserElement(user: user));
+            }
+          }
+          if (userType == userTypes[2]) {
+            if (!user.isStaff && !user.isSuperuser && !user.isCollector) {
+              elements.add(UserElement(user: user));
+            }
+          }
+          if (userType == userTypes[3]) {
+            if (user.isCollector) {
+              elements.add(UserElement(user: user));
+            }
+          }
+        }
+
+
       }
     }
     loading = (mm.status == ModelsStatus.updating);
@@ -100,7 +119,7 @@ class _UsersPageState extends State<UsersPage> {
       }
     }
 
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text("Administrar usuarios"),
         actions: <Widget>[
@@ -259,7 +278,7 @@ class _UsersPageState extends State<UsersPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removeUser(model: element.user).then((v) {
+    mm.removeModel(modelType:ModelType.user,model: element.user).then((v) {
       elements.remove(element);
       mm.users.remove(element.user);
       bool continueDeleting = false;
@@ -339,7 +358,7 @@ class _UsersPageState extends State<UsersPage> {
                           });
                         }
                       } else {
-                        mm.selectUser(element.user);
+                        mm.selectedUser = element.user;
                         openContainer();
                       }
                     },
@@ -360,7 +379,7 @@ class _UsersPageState extends State<UsersPage> {
         );
       }
     }
-    if (userModelOptions.hasMore){
+    if (userModelOptions.fetchedModels.hasMore){
       if (addingModels){
         list.add(
             Center(
@@ -375,7 +394,7 @@ class _UsersPageState extends State<UsersPage> {
                   onPressed: () async {
                     addingModels = true;
                     userModelOptions.page ++;
-                    userModelOptions = await mm.updateUsers(filter: userFilter, loadMore: true,page: userModelOptions.page);
+                    userModelOptions = await mm.updateModels(modelType: ModelType.user,filter: userFilter,page: userModelOptions.page);
                   },
                 )
             )
@@ -440,7 +459,7 @@ class UserWidget extends StatelessWidget {
       onLongPress: onLongPress,
       trailing:(element.deleting)? CircularProgressIndicator(): Icon(Icons.remove_red_eye),
       title: Text(element.user.username),
-      subtitle: (element.deleting)?Text("Eliminando usuario..."):Text("Id:${element.user.id}\n${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}\nCuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.user.dateJoined!.toLocal())}"),
+      subtitle: (element.deleting)?Text("Eliminando usuario..."):Text("Id:${element.user.id}\n${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}\nCuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(element.user.dateJoined!.toLocal())}"),
       onTap: onTap,
     );
   }

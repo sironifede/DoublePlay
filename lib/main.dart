@@ -1,6 +1,7 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:bolita_cubana/themes/themes.dart';
 import 'package:bolita_cubana/views/views.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:theme_mode_handler/theme_mode_handler.dart';
 import 'models/models_manager.dart';

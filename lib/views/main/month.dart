@@ -1,4 +1,5 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../filters/filters.dart';
@@ -16,7 +17,7 @@ class _MonthPageState extends State<MonthPage> {
   bool loading = false;
   bool navigate = false;
   late ModelsManager mm;
-
+  bool hasError = false;
 
   @override
   initState() {
@@ -27,19 +28,92 @@ class _MonthPageState extends State<MonthPage> {
     });
   }
   Future<void> _refresh() async {
-
+    ModelOptions options = await mm.updateModels(modelType: ModelType.month);
+    if (hasError != options.hasError){
+      setState(() {
+        hasError = options.hasError;
+      });
+    }
+    await mm.updateModels(filter:PadlockFilter(playing: true), modelType: ModelType.padlock);
+    for (var model in mm.padlocks){
+      if (model.user == mm.user.id){
+        if (model.playing){
+          mm.selectedPadlock = model;
+          Future.delayed(Duration(milliseconds: 1), () {
+            showDialog(
+                context: context,
+                builder: (_) {
+                  return AlertDialog(
+                    icon: const Icon(Icons.warning),
+                    title: Text("Ya estabas jugando"),
+                    content: Text(
+                        "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
+                    actions: [
+                      TextButton(
+                        child: Text("DESCARTAR"),
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                        },
+                      ),
+                      TextButton(
+                        child: Text("SEGUIR JUGANDO"),
+                        onPressed: () async {
+                          mm.newPlay = false;
+                          await mm.updateModels(modelType: ModelType.play, filter:PlayFilter( padlocks: [mm.selectedPadlock!.id]));
+                          for (var play in mm.plays){
+                            if (play.padlock == mm.selectedPadlock!.id){
+                              if (!play.confirmed){
+                                mm.selectedPlay = play;
+                              }else{
+                                mm.selectedPlay = Play(
+                                    id: 0,
+                                    padlock: 0,
+                                    bet: 5,
+                                    confirmed: false,
+                                    dayNumber: 1,
+                                    nightNumber: 1,
+                                    nRandom: 0,
+                                    type: PlayType.JS
+                                );
+                              }
+                            }
+                          }
+                          Navigator.of(context).pop(false);
+                        },
+                      ),
+                    ],
+                  );
+                }).then((value) {
+              if (value != null){
+                if (value){
+                  mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
+                }else{
+                  Navigator.of(context).pushNamed(Routes.play);
+                }
+              }else{
+                mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
+              }
+            });
+          });
+        }
+      }
+    }
   }
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    if (navigate){
-      navigate = false;
-      Future.delayed(Duration(milliseconds: 1),() async {
-        Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
-      });
-    }
     loading = (mm.status == ModelsStatus.updating);
-    return Scaffold(
+    if (hasError){
+      Future.delayed(Duration(milliseconds: 1),(){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Hubo un error!!!")),
+        );
+      });
+      hasError = false;
+
+    }
+    return CustomScaffold(
         appBar: AppBar(
           title: const Text("Elegir mes"),
         ),
@@ -94,13 +168,31 @@ class _MonthPageState extends State<MonthPage> {
           return Center(
             child: ElevatedButton(
               child: Text("${months[index]}"),
-              onPressed: () async {
-                await mm.createPadlock(model: Padlock(user: mm.user, playing: true, month: index + 1)).then((value) {
-                  mm.firstPlay = true;
-                  navigate = true;
-                });
-
-              } ,
+              onPressed: (mm.months[index].enabled)? () async {
+                mm.newPlay = true;
+                mm.selectedPadlock = Padlock(
+                  user: mm.user.id,
+                  playing: true,
+                  month: mm.months[index].id,
+                  moneyGenerated: 0,
+                  selled: false,
+                  listerMoneyCollected: false,
+                  collectorMoneyCollected: false,
+                  name: "",
+                  phone: ""
+                );
+                mm.selectedPlay = Play(
+                  id: 0,
+                  padlock: 0,
+                  bet: 5,
+                  confirmed: false,
+                  dayNumber: 1,
+                  nightNumber: 1,
+                  nRandom: 0,
+                  type: PlayType.JS
+                );
+                Navigator.of(context).pushNamed(Routes.play);
+              }:null,
             ),
           );
         },

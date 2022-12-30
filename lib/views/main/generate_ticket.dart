@@ -1,9 +1,13 @@
 import 'package:bolita_cubana/filters/filters.dart';
+import 'package:bolita_cubana/models/model.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../models/collector.dart';
+import '../../models/models.dart';
 import '../../models/models_manager.dart';
 import '../../models/play.dart';
 import '../../routes/route_generator.dart';
@@ -31,15 +35,27 @@ class _GenerateTicketState extends State<GenerateTicket> {
     });
   }
   Future<void> _refresh() async {
-    await mm.fetchUser();
-    await mm.updatePlays(filter:PlayFilter(padlocks: [mm.padlock.id]));
-    await mm.updateUsers();
-    mm.updateCollectors();
+    //await mm.fetchUser();
+    await mm.updateModels(modelType: ModelType.play, filter: PlayFilter(padlocks: [mm.selectedPadlock!.id]));
+    await mm.updateModels(modelType: ModelType.collector);
+
+    List<int> newList = [];
+    for (var collector in mm.collectors){
+      if (collector.listers.contains(mm.selectedPadlock!.user)){
+        newList.add(mm.selectedPadlock!.user);
+        newList.add(collector.user);
+        print(newList);
+        break;
+      }
+    }
+
+    mm.updateModels(modelType: ModelType.user,newList: newList, filter: UserFilter());
+
   }
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: const Text("Ticket"),
       ),
@@ -83,61 +99,69 @@ class _GenerateTicketState extends State<GenerateTicket> {
           ),
         ),
       ),
-
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: (){
-            mm.showContinuePlayingDialog = false;
-            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
-          },
-          label: Text("VOLVER AL INICIO")
-      ),
     );
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
     Collector? collector;
+    User? user;
+    User? userCollector;
     for (var i in mm.collectors){
 
-      if (i.listers.contains(mm.padlock.user.id)){
+      if (i.listers.contains(mm.selectedPadlock?.user)){
         collector = i;
+        break;
       }
     }
-    list.add(Text("CT#${(collector == null)? "no tiene": collector.user.username} LT#${mm.padlock.user.username}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
-    list.add(Text("MES:${months[mm.padlock.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
-    list.add(Text("${DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.padlock.updatedAt!.toLocal())}",style: TextStyle( color: Colors.black)));
+    for (var i in mm.users){
+
+      if (i.id == mm.selectedPadlock?.user){
+        user = i;
+      }
+      if (i.id == collector?.user){
+        userCollector = i;
+      }
+
+    }
+    list.add(Text("CT#${(collector == null)? "no tiene": userCollector?.username} LT#${user?.username}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
+    list.add(Text("MES:${months[mm.selectedPadlock!.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
+    list.add(Text("${DateFormat('yyyy-MMMM-dd HH:mm a').format(mm.selectedPadlock!.updatedAt!.toLocal())}",style: TextStyle( color: Colors.black)));
     list.add(
         SizedBox(
           height: 32,
         )
     );
     int total = 0;
-    for (var play in mm.plays){
-      list.add(
-          Row(
-            children: [
-              Text("${play.dayNumber.toString().padLeft(3, '0')}-${play
-                  .nightNumber.toString().padLeft(3, '0')} ${play.type
-                  ?.name}",
-                  style: TextStyle(fontSize: 20, color: Colors.black)),
-              Expanded(child:Text("")),
-              Text("\$${play.bet}",style: TextStyle(fontSize: 20, color: Colors.black))
-            ],
-          )
-      );
-      if ([PlayType.JD, PlayType.JDA].contains(play.type)) {
+    for (var play in mm.plays) {
+      if (play.padlock == mm.selectedPadlock!.id) {
         list.add(
             Row(
               children: [
-                Text("${play.nightNumber.toString().padLeft(3, '0')}-${play
-                    .dayNumber.toString().padLeft(3, '0')} ${play.type
+                Text("${play.dayNumber.toString().padLeft(3, '0')}-${play
+                    .nightNumber.toString().padLeft(3, '0')} ${play.type
                     ?.name}",
                     style: TextStyle(fontSize: 20, color: Colors.black)),
+                Expanded(child: Text("")),
+                Text("\$${play.bet}",
+                    style: TextStyle(fontSize: 20, color: Colors.black))
               ],
             )
         );
 
+        if ([PlayType.JD, PlayType.JDA].contains(play.type)) {
+          list.add(
+              Row(
+                children: [
+                  Text("${play.nightNumber.toString().padLeft(3, '0')}-${play
+                      .dayNumber.toString().padLeft(3, '0')} ${play.type
+                      ?.name}",
+                      style: TextStyle(fontSize: 20, color: Colors.black)),
+                ],
+              )
+          );
+        }
+        total += play.bet;
       }
-      total += play.bet;
     }
     list.add(
         SizedBox(
@@ -170,7 +194,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
     list.add(
         Row(
           children: [
-            Text("${mm.padlock.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20, color: Colors.black)),
+            Text("${mm.selectedPadlock!.id.toString().padLeft(8, '0')}",style: TextStyle(fontSize: 20, color: Colors.black)),
           ],
         )
     );
@@ -189,20 +213,46 @@ class _GenerateTicketState extends State<GenerateTicket> {
     list.add(
         Row(
           children: [
-            Text("Telefono: ${mm.padlock.phone}",style: TextStyle(fontSize: 20, color: Colors.black)),
+            Text("Telefono: ${mm.selectedPadlock!.phone}",style: TextStyle(fontSize: 20, color: Colors.black)),
           ],
         )
     );
     list.add(
         Row(
           children: [
-            Text("Nombre: ${mm.padlock.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
+            Text("Nombre: ${mm.selectedPadlock!.name}",style: TextStyle(fontSize: 20, color: Colors.black)),
           ],
         )
     );
+    list.add(
+      TextButton.icon(
+          icon: Icon(Icons.telegram),
+          onPressed: () async {
+            const url = 'https://t.me/s/CDCDOUBLEPLAY1MILLION';
+            try{
+              await launch(url);
+            }catch(e) {
+              print(e);
+            }
+          },
+          label: Text("CDCDOUBLEPLAY1MILLION")
+      ),
 
-
-
+    );
+    list.add(
+      TextButton.icon(
+          icon: Icon(Icons.telegram),
+          onPressed: () async {
+            const url = 'https://t.me/Bolita1deCuba';
+            try{
+              await launch(url);
+            }catch(e) {
+              print(e);
+            }
+          },
+          label: Text("Bolita1deCuba")
+      ),
+    );
 
     return list;
   }

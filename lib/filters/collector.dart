@@ -1,7 +1,7 @@
 import 'filter.dart';
 
 class CollectorFilter extends Filter{
-  TextFilterField name = TextFilterField(labelText: "Nombre", hintText: "Nombre de colector",fieldName: "name__icontains");
+  TextFilterField name = TextFilterField(labelText: "Nombre", hintText: "Nombre de colector",fieldName: "user__username__icontains");
   TextFilterField listers = TextFilterField(labelText: "Nombre de listeros", hintText: "Nombre de listeros dentro del colector",fieldName: "listers");
 
 
@@ -16,10 +16,11 @@ class CollectorFilter extends Filter{
   @override
   String getFilterStr(){
     String filterStr = "?";
-    List<FilterField> fields = [name,listers];
+    List<FilterField> fields = [super.idIn,name,listers];
     for (var field in fields) {
-      filterStr += "${field.getFieldName}=${field.getValue}&";
+      filterStr += "${field.getHeader}";
     }
+    print(filterStr);
     return filterStr;
   }
 }

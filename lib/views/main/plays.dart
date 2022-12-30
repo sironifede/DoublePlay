@@ -1,4 +1,6 @@
+import 'package:bolita_cubana/api_connection/api.dart';
 import 'package:bolita_cubana/routes/route_generator.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -24,7 +26,7 @@ class _PlaysPageState extends State<PlaysPage> {
   bool addingModels = false;
   late ModelsManager mm;
 
-  ModelOptions playModelOptions = ModelOptions(hasMore: false, page: 1);
+  ModelOptions playModelOptions = ModelOptions(fetchedModels: FetchedModels(hasMore: false, models: []),hasError: false, page: 1);
 
   bool selectingElements = true;
   List<PlayElement> elements = [];
@@ -70,31 +72,30 @@ class _PlaysPageState extends State<PlaysPage> {
       DateTime monday = mostRecentMonday(DateTime.now().subtract(Duration(days: 7)));
       sunday = sunday.add(Duration(hours: 23, minutes: 59, seconds: 59));
 
-      padlockFilter.creAtGt.value = monday.toString();
-      padlockFilter.creAtLt.value = sunday.toString();
+      playFilter.creAtGt.value = monday.toString();
+      playFilter.creAtLt.value = sunday.toString();
       _refresh();
     });
   }
+
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
   DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
+
   Future<void> _refresh() async {
-    padlockFilter.user.values = [mm.selectedUser.id];
-    await mm.updatePadlocks(filter: padlockFilter);
+    playFilter.user.values = [mm.selectedUser!.id];
+
+    playModelOptions = await mm.updateModels(modelType: ModelType.play,filter: playFilter);
     List<int> padlocks = [];
-    for (var padlock in mm.padlocks) {
-
-      padlocks.add(padlock.id);
+    for (var play in playModelOptions.fetchedModels.models) {
+      if(!padlocks.contains((play as Play).padlock)){
+        padlocks.add((play as Play).padlock);
+      }
     }
-    print(mm.padlocks.length);
-
-    playFilter.padlock.values = padlocks;
-    playModelOptions = await mm.updatePlays(filter: playFilter);
-
-
+    await mm.updateModels(modelType: ModelType.padlock,newList: padlocks,filter: PadlockFilter());
   }
+
   @override
   Widget build(BuildContext context) {
-
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
     if (!selectingElements){
@@ -102,12 +103,78 @@ class _PlaysPageState extends State<PlaysPage> {
     }
     totalBet = 0;
     for (var play in mm.plays) {
-      if (!selectingElements){
-        elements.add(PlayElement(play: play));
+      bool addP = false;
+      if (playFilter.creAtGt.value != "" && playFilter.creAtLt.value != "") {
+        if ((play as Play).createdAt!.isAfter(DateTime.parse(playFilter.creAtGt.value)) &&
+            (play as Play).createdAt!.isBefore(DateTime.parse(playFilter.creAtLt.value)) &&
+            (play as Play).confirmed) {
+          addP = true;
+        }
+      }else{
+        addP = true;
       }
-      totalBet += play.bet;
-    }
+      if (addP){
+        for (var padlock in mm.padlocks){
+          int monthf = -1;
+          try{
+            monthf = int.parse(playFilter.month.value);
+          }catch(e){}
+          bool add = true;
+          if (monthf != -1){
+            if (padlock.month != monthf){
+              add = false;
+            }
+          }
+          bool addType = false;
+          if (playType != ""){
+            if (playType == "JD" && play.type == PlayType.JD){
+              addType = true;
+            }
+            if (playType == "JDA" && play.type == PlayType.JDA){
+              addType = true;
+            }
+            if (playType == "JS" && play.type == PlayType.JS){
+              addType = true;
+            }
+            if (playType == "JSA" && play.type == PlayType.JSA){
+              addType = true;
+            }
+          }else{
+            addType = true;
+          }
 
+          if (padlock.user == mm.selectedUser!.id && add && addType) {
+            if (play.padlock == padlock.id ) {
+              int id = -1;
+              try{
+                id = int.parse(_padlockId.text);
+              }catch(e){
+
+              }
+              //print("padlock: ${play.padlock}");
+              if (id != -1){
+                if (padlock.id == id){
+                  if (!selectingElements) {
+                    elements.add(PlayElement(padlock: padlock, play: play));
+
+                  }
+                  totalBet += play.bet;
+                  break;
+                }
+              }else{
+                if (!selectingElements) {
+                  elements.add(PlayElement(padlock: padlock, play: play));
+                }
+                totalBet += play.bet;
+
+                break;
+              }
+
+            }
+          }
+        }
+      }
+    }
     if (!loading) {
       if (filtering) {
         setState(() {
@@ -121,7 +188,7 @@ class _PlaysPageState extends State<PlaysPage> {
       }
     }
 
-    return Scaffold(
+    return CustomScaffold(
         appBar: AppBar(
           title: const Text("Jugadas"),
           actions: <Widget>[
@@ -184,21 +251,21 @@ class _PlaysPageState extends State<PlaysPage> {
                                         child:Text("Elegir un periodo para filtrar por fecha"),
                                         onPressed: () async {
                                           DateTimeRange? dateTimeRange;
-                                          if (padlockFilter.creAtGt.value != ""){
-                                            dateTimeRange = DateTimeRange(start: DateTime.parse(padlockFilter.creAtGt.value), end: DateTime.parse(padlockFilter.creAtLt.value));
+                                          if (playFilter.creAtGt.value != ""){
+                                            dateTimeRange = DateTimeRange(start: DateTime.parse(playFilter.creAtGt.value), end: DateTime.parse(playFilter.creAtLt.value));
                                           }
                                           dateTimeRange = await showDateRangePicker(context: context,initialDateRange: dateTimeRange, firstDate: DateTime(1900), lastDate: DateTime(2100));
                                           if (dateTimeRange != null){
                                             setState(() {
-                                              padlockFilter.creAtGt.value = dateTimeRange!.start.toString();
+                                              playFilter.creAtGt.value = dateTimeRange!.start.toString();
                                               DateTime end = dateTimeRange.end;
                                               end = end.add(const Duration(hours: 23, minutes: 59)) ;
-                                              padlockFilter.creAtLt.value = end.toString();
+                                              playFilter.creAtLt.value = end.toString();
                                             });
                                           }
                                         },
                                       ),
-                                      subtitle: Text("${padlockFilter.creAtGt.value}\n${padlockFilter.creAtLt.value}"),
+                                      subtitle: Text("${playFilter.creAtGt.value}\n${playFilter.creAtLt.value}"),
                                     )
                                   ],
                                 ),
@@ -212,21 +279,12 @@ class _PlaysPageState extends State<PlaysPage> {
                                   ),
                                   TextButton(
                                       onPressed: () async {
-                                        padlockFilter.month.value = month;
-                                        await mm.updatePadlocks(filter:padlockFilter);
-                                        List<int> padlocks = [];
-                                        for (var padlock in mm.padlocks) {
-                                          print(padlock.id);
-                                          padlocks.add(padlock.id);
-                                        }
-                                        playFilter.padlock.values = padlocks;
+                                        playFilter.month.value = month;
                                         playFilter.type.value = playType;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
                                         filtering = true;
-                                        mm.updatePlays(filter:playFilter).then((value) {
-                                          playModelOptions = value;
-                                        });
+                                        _refresh();
                                         Navigator.of(context).pop();
                                       },
                                       child: const Text("FILTRAR")
@@ -308,7 +366,7 @@ class _PlaysPageState extends State<PlaysPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removePlay(model: element.play).then((v) {
+    mm.removeModel(modelType: ModelType.play,model: element.play).then((v) {
       elements.remove(element);
       mm.plays.remove(element.play);
       bool continueDeleting = false;
@@ -336,8 +394,8 @@ class _PlaysPageState extends State<PlaysPage> {
     list.add(
         ListTile(
           leading: const Icon(Icons.person),
-          title: Text(mm.selectedUser.username),
-          subtitle: Text("${(mm.selectedUser.isSuperuser)? "Superusuario": (mm.selectedUser.isStaff)?"Admin": "Listero"}"),
+          title: Text(mm.selectedUser!.username),
+          subtitle: Text("${(mm.selectedUser!.isSuperuser)? "Superusuario": (mm.selectedUser!.isStaff)?"Admin": "Listero"}"),
         )
     );
 
@@ -346,14 +404,14 @@ class _PlaysPageState extends State<PlaysPage> {
           ListTile(
             leading: Text(""),
             title: Text('Jugadas'),
-            subtitle: Text('${mm.plays.length}'),
+            subtitle: Text('${elements.length}'),
           )
       );
       list.add(
           ListTile(
             leading: Text(""),
             title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
+            subtitle: Text("Desde: ${playFilter.creAtGt.value}\nHasta: ${playFilter.creAtLt.value}"),
           )
       );
     }else{
@@ -361,7 +419,7 @@ class _PlaysPageState extends State<PlaysPage> {
           ListTile(
             leading: Text(""),
             title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${padlockFilter.creAtGt.value}\nHasta: ${padlockFilter.creAtLt.value}"),
+            subtitle: Text("Desde: ${playFilter.creAtGt.value}\nHasta: ${playFilter.creAtLt.value}"),
           )
       );
       list.add(
@@ -393,16 +451,19 @@ class _PlaysPageState extends State<PlaysPage> {
                     playType = "";
                     filtering = true;
                     playFilter.type.value = "";
-                    padlockFilter.creAtLt.value = "";
-                    padlockFilter.creAtGt.value = "";
-                    padlockFilter.month.value = "";
-                    playFilter.padlock.values = [_padlockId.text];
+                    playFilter.creAtLt.value = "";
+                    playFilter.creAtGt.value = "";
+                    playFilter.month.value = "";
+                    try{
+                      int id = int.parse(_padlockId.text);
+                      playFilter.padlock.values = [id];
+                    }catch(e){
+                      playFilter.padlock.values = [_padlockId.text];
+                    }
                   });
 
-                  await mm.updatePadlocks(filter: padlockFilter);
-                  mm.updatePlays(filter:playFilter).then((value) {
-                    playModelOptions = value;
-                  });
+                  _refresh();
+
                 },
               )
           )
@@ -418,22 +479,23 @@ class _PlaysPageState extends State<PlaysPage> {
     }
 
     bool isSelectingElements = false;
-    for (var element in elements) {
-      if (element.selected) {
+    for (int i = 0;i < elements.length; i++) {
+      if (elements[i].selected) {
         isSelectingElements = true;
       }
       list.add(
         Padding(
           padding: const EdgeInsets.all(8.0),
           child: PlayWidget(
-            element: element,
+            index: i +1 ,
+            element: elements[i],
             onTap: () {
               if (selectingElements) {
                 setState(() {
-                  element.selected = !element.selected;
+                  elements[i].selected = !elements[i].selected;
                 });
               }else{
-                mm.padlock = element.play.padlock;
+                mm.selectedPadlock = elements[i].padlock;
                 Navigator.of(context).pushNamed(Routes.padlock);
               }
             },
@@ -444,7 +506,7 @@ class _PlaysPageState extends State<PlaysPage> {
                 });
               }
               setState(() {
-                element.selected = !element.selected;
+                elements[i].selected = !elements[i].selected;
               });
             }: null,
             selectingElements: selectingElements,
@@ -460,7 +522,7 @@ class _PlaysPageState extends State<PlaysPage> {
         });
       });
     }
-    if (playModelOptions.hasMore){
+    if (playModelOptions.fetchedModels.hasMore){
       if (addingModels){
         list.add(
           const Center(
@@ -475,7 +537,7 @@ class _PlaysPageState extends State<PlaysPage> {
               onPressed: () async {
                 addingModels = true;
                 playModelOptions.page ++;
-                playModelOptions = await mm.updatePlays(filter: playFilter, loadMore: true,page: playModelOptions.page);
+                playModelOptions = await mm.updateModels(modelType: ModelType.play,filter: playFilter,page: playModelOptions.page);
               },
             )
           )
@@ -557,13 +619,15 @@ class _PlaysPageState extends State<PlaysPage> {
 }
 class PlayElement {
   final Play play;
+  final Padlock padlock;
   bool selected;
   bool deleting = false;
-  PlayElement({required this.play, this.selected = false});
+  PlayElement({required this.padlock, required this.play, this.selected = false});
 }
 class PlayWidget extends StatelessWidget {
-  const PlayWidget({required this.element, required this.onTap, this.onLongPress, this.selectingElements = false});
+  const PlayWidget({required this.element, required this.onTap, this.onLongPress, this.selectingElements = false, required this.index});
   final PlayElement element;
+  final int index;
   final void Function()? onLongPress;
   final void Function()? onTap;
   final bool selectingElements;
@@ -582,9 +646,9 @@ class PlayWidget extends StatelessWidget {
                 value: element.selected,
                 onChanged: (b){}
               ):null,
-              title: Text("Para el mes: ${element.play.padlock.month}"),
+              title: Text("Para el mes: ${element.padlock.month}"),
               subtitle: Text("Tipo de jugada: ${element.play.type?.name}"),
-              trailing: Text("#${element.play.padlock.id.toString().padLeft(8, '0')}"),
+              trailing: Text("#${element.padlock.id.toString().padLeft(8, '0')}"),
             ),
             (element.deleting)?const Text("Eliminando jugada..."): const Text(""),
             Row(
@@ -597,7 +661,6 @@ class PlayWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Colors.red,
                           borderRadius: BorderRadius.circular(60)
-                        //more than 50% of width makes circle
                       ),
                       child: Center(child: Text("${element.play.dayNumber.toString().padLeft(3, '0')}")),
                     ),
@@ -611,7 +674,6 @@ class PlayWidget extends StatelessWidget {
                       decoration: BoxDecoration(
                           color: Colors.blue,
                           borderRadius: BorderRadius.circular(60)
-                        //more than 50% of width makes circle
                       ),
                       child: Center(child: Text("${element.play.nightNumber.toString().padLeft(3, '0')}")),
                     ),
@@ -636,9 +698,12 @@ class PlayWidget extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.play.createdAt!.toLocal())}"),
+              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(element.play.createdAt!.toLocal())}"),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child:  Text("Jugada Nro: $index"),
             )
-
           ],
         ),
       )

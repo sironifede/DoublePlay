@@ -1,5 +1,6 @@
 
 import 'package:bolita_cubana/routes/route_generator.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +17,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   bool left = false;
+  bool dialogOpened = false;
+  bool hasError = false;
   late ModelsManager mm;
 
   @override
@@ -30,7 +33,18 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    if (mm.user.userStatus == UserStatus.unauthorized){
+    if (hasError){
+      Future.delayed(Duration(milliseconds: 1),(){
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+              content: Text("Hubo un error!!!")),
+        );
+      });
+      hasError = false;
+
+    }
+    if (mm.user.userStatus == UserStatus.unauthorized && !dialogOpened){
+      dialogOpened = true;
       mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds:1), (){
         showDialog(
@@ -50,10 +64,10 @@ class _HomePageState extends State<HomePage> {
               );
             }).then((value) {
           Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-
         });
       });
-    }else if (mm.user.userStatus == UserStatus.appNotActive) {
+    }else if (mm.user.userStatus == UserStatus.appNotActive && !dialogOpened){
+      dialogOpened = true;
       mm.user.userStatus = UserStatus.unauthenticated;
       Future.delayed(Duration(milliseconds: 1), () {
         showDialog(
@@ -73,76 +87,15 @@ class _HomePageState extends State<HomePage> {
                 ],
               );
             }).then((value) {
-              Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-
-        });
-      });
-    }else if (mm.showContinuePlayingDialog){
-      mm.showContinuePlayingDialog = false;
-      Future.delayed(Duration(milliseconds: 1), () {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                icon: const Icon(Icons.warning),
-                title: Text("Ya estabas jugando"),
-                content: Text(
-                    "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
-                actions: [
-                  TextButton(
-                    child: Text("DESCARTAR"),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                  TextButton(
-                    child: Text("SEGUIR JUGANDO"),
-                    onPressed: () {
-                      Navigator.of(context).pop(false);
-                    },
-                  ),
-                ],
-              );
-            }).then((value) {
-              if (value != null){
-                if (value){
-                  mm.removePadlock(model: mm.padlock);
-                }else{
-                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.play, (Route<dynamic> route) => false);
-                }
-              }else{
-                mm.removePadlock(model: mm.padlock);
-              }
+          Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
         });
       });
     }
 
-    return Scaffold(
+    return CustomScaffold(
+
       appBar: AppBar(
         title: const Text("Inicio"),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.help),
-            onPressed: () {
-
-              Navigator.of(context).pushNamed(Routes.help);
-            },
-          ),
-          IconButton(
-            icon: Icon(Icons.person),
-            onPressed: () {
-              mm.selectUser(mm.user);
-              Navigator.of(context).pushNamed(Routes.user);
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: (){
-          mm.user = User();
-          Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-        },
-        label: Text("CERRAR SESION"),
       ),
       body:RefreshIndicator(
         onRefresh: _refresh,
@@ -164,18 +117,94 @@ class _HomePageState extends State<HomePage> {
   }
   Future<void> _refresh() async {
     await mm.fetchUser();
+
     if (!mm.user.isStaff && !mm.user.isSuperuser) {
-      await mm.updateUsers();
-      await mm.updateCollectors();
-      if (!mm.user.isCollector ) {
-        mm.showContinuePlayingDialog = await mm.isUserPlaying();
-        if (mm.showContinuePlayingDialog) {
-          await mm.updatePlays(filter: PlayFilter(padlocks: [mm.padlock.id]));
+      ModelOptions? options;
+      await mm.updateModels(filter:CollectorFilter(),newList: [mm.user.id], modelType: ModelType.collector).then((value) => options = value);
+      for (var model in mm.collectors){
+        if (model.id == mm.user.id){
+          mm.user.isCollector = true;
+          break;
         }
       }
+
+      if (!mm.user.isCollector ) {
+        await mm.updateModels(filter:PadlockFilter(playing: true, users: [mm.user.id]), modelType: ModelType.padlock);
+        for (var model in mm.padlocks){
+          if (model.user == mm.user.id){
+            if (model.playing){
+              mm.selectedPadlock = model;
+              Future.delayed(Duration(milliseconds: 1), () {
+                showDialog(
+                    context: context,
+                    builder: (_) {
+                      return AlertDialog(
+                        icon: const Icon(Icons.warning),
+                        title: Text("Ya estabas jugando"),
+                        content: Text(
+                            "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
+                        actions: [
+                          TextButton(
+                            child: Text("DESCARTAR"),
+                            onPressed: () {
+                              Navigator.of(context).pop(true);
+                            },
+                          ),
+                          TextButton(
+                            child: Text("SEGUIR JUGANDO"),
+                            onPressed: () async {
+                              mm.newPlay = false;
+                              await mm.updateModels(modelType: ModelType.play, filter:PlayFilter( padlocks: [mm.selectedPadlock!.id]));
+                              for (var play in mm.plays){
+                                if (play.padlock == mm.selectedPadlock!.id){
+                                  if (!play.confirmed){
+                                    mm.selectedPlay = play;
+                                  }else{
+                                    mm.selectedPlay = Play(
+                                        id: 0,
+                                        padlock: 0,
+                                        bet: 5,
+                                        confirmed: false,
+                                        dayNumber: 1,
+                                        nightNumber: 1,
+                                        nRandom: 0,
+                                        type: PlayType.JS
+                                    );
+                                  }
+                                }
+                              }
+                              Navigator.of(context).pop(false);
+                            },
+                          ),
+                        ],
+                      );
+                    }).then((value) {
+                  if (value != null){
+                    if (value){
+                      mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
+                    }else{
+                      Navigator.of(context).pushNamed(Routes.play);
+                    }
+                  }else{
+                    mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
+                  }
+                });
+              });
+            }
+          }
+        }
+      }
+      Future.delayed(Duration(seconds: 1),(){
+        if (options != null){
+          if (hasError != options!.hasError){
+            setState(() {
+              hasError = options!.hasError;
+            });
+          }
+        }
+
+      });
     }
-
-
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
@@ -192,7 +221,7 @@ class _HomePageState extends State<HomePage> {
       list.add(
           OptionWidget(
             onPressed: (mm.status == ModelsStatus.updating)? null : () {
-              mm.selectUser(mm.user);
+              mm.selectedUser = mm.user;
               Navigator.of(context).pushNamed(Routes.plays);
             },
             text: "Ver jugadas",
@@ -205,6 +234,12 @@ class _HomePageState extends State<HomePage> {
         OptionWidget(
           onPressed: (mm.status == ModelsStatus.updating)? null : (){
             Navigator.of(context).pushNamed(Routes.collector);
+            for (var collector in mm.collectors){
+              if (collector.user == mm.user.id){
+                mm.selectedCollector = collector;
+              }
+            }
+
           },
           text: "Ver dinero recaudado",
           backgroundImage: "assets/images/money.png",
@@ -267,6 +302,33 @@ class _HomePageState extends State<HomePage> {
             },
             text: "Ingresar Jugada",
             backgroundImage: "assets/images/ruleta.png",
+          )
+      );
+      list.add(
+          OptionWidget(
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
+              Navigator.of(context).pushNamed(Routes.sellPadlock);
+            },
+            text: "Vender numeros",
+            backgroundImage: "assets/images/sell.png",
+          )
+      );
+      list.add(
+          OptionWidget(
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
+              Navigator.of(context).pushNamed(Routes.moneyGenerated);
+            },
+            text: "Dinero generado",
+            backgroundImage: "assets/images/calendar.png",
+          )
+      );
+      list.add(
+          OptionWidget(
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
+              Navigator.of(context).pushNamed(Routes.enabledMonths);
+            },
+            text: "Meses habilitados",
+            backgroundImage: "assets/images/calendar.png",
           )
       );
     }

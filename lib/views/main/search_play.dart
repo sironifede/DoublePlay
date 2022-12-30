@@ -1,4 +1,5 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -36,32 +37,43 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
   DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
   Future<void> _refresh() async {
-    mm.plays = [];
-
-    await mm.updateUsers();
-    await mm.updateCollectors();
-    await mm.updatePadlocks();
-    List<int> padlocks = [];
-    for (var padlock in mm.padlocks) {
-      padlocks.add(padlock.id);
-    }
-    print(mm.padlocks.length);
-    playFilter.padlock.values = padlocks;
-    playFilter.dayNumber.value = _dayNumberController.text;
-    playFilter.nightNumber.value = _nightNumberController.text;
-    if (_dayNumberController.text != ""){
+    if (_dayNumberController.text != "") {
       if (_nightNumberController.text != "") {
-        await mm.updatePlays(filter: playFilter);
+        ModelOptions modelOptions = await mm.updateModels(
+            modelType: ModelType.play, filter: playFilter);
+        List<int> padlocks = [];
+
+        for (var model in modelOptions.fetchedModels.models) {
+          if (!padlocks.contains((model as Play).padlock)) {
+            padlocks.add((model as Play).padlock);
+
+          }
+        }
+        print(padlocks);
+        modelOptions = await mm.updateModels(modelType: ModelType.padlock,
+            filter: PadlockFilter(),
+            newList: padlocks);
+        List<int> users = [];
+        for (var model in modelOptions.fetchedModels.models) {
+          if (!users.contains((model as Padlock).user)) {
+            users.add((model as Padlock).user);
+          }
+        }
+        await mm.updateModels(modelType: ModelType.collector);
+        for (var collector in mm.collectors) {
+          users.add(collector.id);
+        }
+        mm.updateModels(
+            modelType: ModelType.user, filter: UserFilter(), newList: users);
       }
     }
-
   }
   @override
   Widget build(BuildContext context) {
 
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    return Scaffold(
+    return CustomScaffold(
         appBar: AppBar(
           title: const Text("Buscar jugada"),
         ),
@@ -114,14 +126,14 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
                     playFilter.nightNumber.value = _nightNumberController.text;
 
                     playFilter.type.value = "";
-                    await mm.updatePlays(filter: playFilter,loadMore: true);
+                    _refresh();
 
                     playFilter.dayNumber.value = _nightNumberController.text;
                     playFilter.nightNumber.value = _dayNumberController.text;
                     playFilter.type.value = "JDA";
-                    await mm.updatePlays(filter: playFilter,loadMore: true);
+                    _refresh();
                     playFilter.type.value = "JD";
-                    await mm.updatePlays(filter: playFilter,loadMore: true);
+                    _refresh();
 
                   },
                   icon: Icon(Icons.search),
@@ -135,10 +147,19 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
     for (var collector in mm.collectors){
       bool add = false;
       for (var play in mm.plays){
-        if (collector.listers.contains(play.padlock.user.id)){
-          add = true;
+        for (var padlock in mm.padlocks){
+          if (padlock.id ==play.padlock){
+            if (collector.listers.contains(padlock.user)){
+
+              add = true;
+            }
+            break;
+          }
+
         }
+
       }
+
       if (add) {
         blank = false;
         List<Widget> users = [];
@@ -147,90 +168,107 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
           if (collector.listers.contains(user.id)){
             List<Widget> plays = [];
             for (var play in mm.plays){
-              bool addPlay = false;
-              if ([PlayType.JDA, PlayType.JD].contains(play.type)){
-                if (play.dayNumber.toString() == _nightNumberController.text || play.nightNumber.toString() ==  _dayNumberController.text){
-                  addPlay = true;
+
+              for (var padlock in mm.padlocks){
+                if (padlock.user == user.id){
+                  if(play.padlock == padlock.id){
+                    bool addPlay = false;
+                    int dayNumber = -1;
+                    int nightNumber = -1;
+                    try{
+                      dayNumber = int.parse(_dayNumberController.text);
+                      nightNumber = int.parse(_nightNumberController.text);
+                    }catch(e){}
+                    if (nightNumber != -1 && dayNumber != -1) {
+                      if ([PlayType.JDA, PlayType.JD].contains(play.type)) {
+                        if (play.dayNumber == nightNumber && play.nightNumber == dayNumber) {
+                          addPlay = true;
+                        }
+                      }
+                      if (play.dayNumber == dayNumber && play.nightNumber == nightNumber) {
+                        addPlay = true;
+                      }
+                    }
+                    if (addPlay){
+                      plays.add(
+                          Card(
+                              child: ListTile(
+                                onTap: (){
+
+                                  mm.selectedPadlock = padlock;
+                                  Navigator.of(context).pushNamed(Routes.padlock);
+                                },
+                                title: Column(
+                                  crossAxisAlignment:CrossAxisAlignment.start,
+                                  children: [
+                                    ListTile(
+                                      title: Text("Para el mes: ${padlock.month}"),
+                                      subtitle: Text("Tipo de jugada: ${play.type?.name}"),
+                                      trailing: Text("#${padlock.id.toString().padLeft(8, '0')}"),
+                                    ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: Center(
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  borderRadius: BorderRadius.circular(60)
+                                                //more than 50% of width makes circle
+                                              ),
+                                              child: Center(child: Text("${play.dayNumber.toString().padLeft(3, '0')}")),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Center(
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: BoxDecoration(
+                                                  color: Colors.blue,
+                                                  borderRadius: BorderRadius.circular(60)
+                                                //more than 50% of width makes circle
+                                              ),
+                                              child: Center(child: Text("${play.nightNumber.toString().padLeft(3, '0')}")),
+                                            ),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Center(
+                                            child: Container(
+                                              width: 60,
+                                              height: 60,
+                                              decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  borderRadius: BorderRadius.circular(60)
+                                                //more than 50% of width makes circle
+                                              ),
+                                              child: Center(child: Text("\$${play.bet}")),
+                                            ),
+                                          ),
+                                        ),
+
+                                      ],
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child:  Text("Realizada: ${(play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(play.createdAt!.toLocal())}"),
+                                    )
+
+                                  ],
+                                ),
+                              )
+                          )
+                      );
+                    }
+                    break;
+                  }
                 }
               }
-              if (play.dayNumber.toString() == _dayNumberController.text || play.nightNumber.toString() ==  _nightNumberController.text){
-                addPlay = true;
-              }
-              if (play.padlock.user.id == user.id && addPlay){
-                plays.add(
-                    Card(
-                        child: ListTile(
-                          onTap: (){
 
-                            mm.padlock = play.padlock;
-                            Navigator.of(context).pushNamed(Routes.padlock);
-                          },
-                          title: Column(
-                            crossAxisAlignment:CrossAxisAlignment.start,
-                            children: [
-                              ListTile(
-                                title: Text("Para el mes: ${play.padlock.month}"),
-                                subtitle: Text("Tipo de jugada: ${play.type?.name}"),
-                                trailing: Text("#${play.padlock.id.toString().padLeft(8, '0')}"),
-                              ),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Center(
-                                      child: Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                            color: Colors.red,
-                                            borderRadius: BorderRadius.circular(60)
-                                          //more than 50% of width makes circle
-                                        ),
-                                        child: Center(child: Text("${play.dayNumber.toString().padLeft(3, '0')}")),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Center(
-                                      child: Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                            color: Colors.blue,
-                                            borderRadius: BorderRadius.circular(60)
-                                          //more than 50% of width makes circle
-                                        ),
-                                        child: Center(child: Text("${play.nightNumber.toString().padLeft(3, '0')}")),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Center(
-                                      child: Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                            color: Colors.green,
-                                            borderRadius: BorderRadius.circular(60)
-                                          //more than 50% of width makes circle
-                                        ),
-                                        child: Center(child: Text("\$${play.bet}")),
-                                      ),
-                                    ),
-                                  ),
-
-                                ],
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child:  Text("Realizada: ${(play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(play.createdAt!.toLocal())}"),
-                              )
-
-                            ],
-                          ),
-                        )
-                    )
-                );
-              }
             }
             if (plays.length > 0) {
               users.add(
@@ -248,24 +286,28 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
 
           }
         }
-        list.add(
-            Card(
-              child: ExpansionTile(
-                  title: ListTile(
-                    title: Text("${collector.user.username}"),
-                    subtitle: Text("Id: ${collector.id}\n${collector.listers
-                        .length} ${(collector.listers.length == 1)
-                        ? "listero"
-                        : "listeros"} \nColector creado: ${(collector.user
-                        .dateJoined == null)
-                        ? "No se sabe"
-                        : DateFormat('yyyy-MMMM-dd hh:mm a').format(
-                        collector.user.dateJoined!.toLocal())}"),
+        for (var user in mm.users) {
+          if (collector.user == user.id) {
+            list.add(
+                Card(
+                  child: ExpansionTile(
+                      title: ListTile(
+                        title: Text("${user.username}"),
+                        subtitle: Text("Id: ${collector.id}\n${collector.listers
+                            .length} ${(collector.listers.length == 1)
+                            ? "listero"
+                            : "listeros"} \nColector creado: ${(user
+                            .dateJoined == null)
+                            ? "No se sabe"
+                            : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
+                      ),
+                      children: users
                   ),
-                  children: users
-              ),
-            )
-        );
+                )
+            );
+          }
+        }
+
       }
     }
     if (blank){

@@ -40,6 +40,7 @@ class ModelsManager with ChangeNotifier {
   List<DisabledNumbers> disabledNumbers = [];
   List<DisabledBets> disabledBets = [];
   List<Month> months = [];
+  List<Help> helps = [];
 
   Future<User> authenticateUser({required String username, required String password}) async {
     status = ModelsStatus.updating;
@@ -80,6 +81,19 @@ class ModelsManager with ChangeNotifier {
       UserPassword userPassword = UserPassword(id: id,password:password,password2:password2);
       map = await changeUserPassword(user:user,userPassword: userPassword);
 
+    }catch (e){
+      throw e;
+    }
+    status = ModelsStatus.updated;
+    notifyListeners();
+    return map;
+  }
+  Future<Map<String,dynamic>> changeUsername({required User model}) async {
+    Map<String,dynamic> map = {};
+    status = ModelsStatus.updating;
+    notifyListeners();
+    try {
+      map = await changeUserUsername(user: user,selectedUser: model);
     }catch (e){
       throw e;
     }
@@ -139,6 +153,10 @@ class ModelsManager with ChangeNotifier {
       case ModelType.app:
         modelString = "app";
         break;
+      case ModelType.help:
+        models = helps;
+        modelString = "helps";
+        break;
     }
 
     status = ModelsStatus.updating;
@@ -190,6 +208,7 @@ class ModelsManager with ChangeNotifier {
         }
       }
     }catch (e){
+      updateUser(e);
       hasError = true;
       print("fallo todo $e");
     }
@@ -232,6 +251,10 @@ class ModelsManager with ChangeNotifier {
       case ModelType.app:
         modelString = "app";
         break;
+      case ModelType.help:
+        models = helps;
+        modelString = "helps";
+        break;
     }
     status = ModelsStatus.updating;
     notifyListeners();
@@ -239,6 +262,7 @@ class ModelsManager with ChangeNotifier {
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
       model = await modelsApi.getModel(id: model.id);
     }catch (e){
+      updateUser(e);
       print("fallo todo $e");
     }
     status = ModelsStatus.updated;
@@ -281,6 +305,10 @@ class ModelsManager with ChangeNotifier {
       case ModelType.app:
         modelString = "app";
         break;
+      case ModelType.help:
+        models = helps;
+        modelString = "helps";
+        break;
     }
     status = ModelsStatus.updating;
     notifyListeners();
@@ -288,6 +316,7 @@ class ModelsManager with ChangeNotifier {
       ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
       model = await modelsApi.putModel(model: model);
     }catch (e){
+      updateUser(e);
       print("fallo todo $e");
     }
     status = ModelsStatus.updated;
@@ -329,6 +358,10 @@ class ModelsManager with ChangeNotifier {
         break;
       case ModelType.app:
         break;
+      case ModelType.help:
+        models = helps;
+        modelString = "helps";
+        break;
     }
     status = ModelsStatus.updating;
     notifyListeners();
@@ -337,6 +370,7 @@ class ModelsManager with ChangeNotifier {
       model = await modelsApi.postModel(model: model);
       models.add(model);
     }catch (e){
+      updateUser(e);
       print("fallo todo $e");
     }
     status = ModelsStatus.updated;
@@ -378,6 +412,10 @@ class ModelsManager with ChangeNotifier {
         break;
       case ModelType.app:
         break;
+      case ModelType.help:
+        models = helps;
+        modelString = "helps";
+        break;
     }
     status = ModelsStatus.updating;
     notifyListeners();
@@ -386,12 +424,29 @@ class ModelsManager with ChangeNotifier {
       await modelsApi.deleteModel(id: model.id);
       models.remove(model);
     }catch (e){
+      updateUser(e);
       print("fallo todo $e");
     }
 
     status = ModelsStatus.updated;
     notifyListeners();
 
+  }
+  void updateUser(e){
+    switch(e){
+      case Exceptions.forbidden:
+        user.userStatus = UserStatus.appNotActive;
+        break;
+      case Exceptions.unauthorized:
+        user.userStatus = UserStatus.unauthorized;
+        break;
+      case Exceptions.badRequest:
+        user.userStatus = UserStatus.authenticated;
+        break;
+      default:
+        user.userStatus = UserStatus.authenticated;
+        break;
+    }
   }
 
   Future<void> fetchUser() async {

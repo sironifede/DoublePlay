@@ -5,6 +5,7 @@ import 'package:bolita_cubana/models/models.dart';
 import 'package:bolita_cubana/models/models_manager.dart' as g;
 import 'package:bolita_cubana/routes/route_generator.dart';
 
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -69,7 +70,7 @@ class _LoginPage extends State<LoginPage> {
     }
 
     // Constructor de la ventana Login
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text("Double Play - Inicio de sesion"),
       ),
@@ -165,7 +166,7 @@ class _LoginPage extends State<LoginPage> {
                                             _errorUsername =
                                             (error['non_field_errors'].toString() ==
                                                 "null")
-                                                ? ""
+                                                ? (error['username'].toString() == "null")?"":error['username'].toString()
                                                 : error['non_field_errors'][0].toString();
                                             _errorPassword =
                                             (error['non_field_errors'].toString() ==

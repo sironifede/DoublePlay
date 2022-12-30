@@ -1,6 +1,10 @@
+import 'package:bolita_cubana/models/app.dart';
+import 'package:bolita_cubana/models/model.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/models_manager.dart';
+import '../shimmer.dart';
 
 class AppPage extends StatefulWidget {
   const AppPage({Key? key,}): super(key: key);
@@ -17,29 +21,30 @@ class _AppPageState extends State<AppPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),(){
-      mm.getApp();
+      _refresh();
     });
+  }
+  Future<void> _refresh() async {
+    mm.app = await mm.getModel(modelType: ModelType.app, model: App(id: 1,active: false, stopHour: TimeOfDay.now(), stopHour2: TimeOfDay.now())) as App;
   }
 
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    return Scaffold(
+    return CustomScaffold(
         appBar: AppBar(
           title: const Text("Estado de la app"),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () {
-                mm.getApp();
-              },
-            ),
-          ],
         ),
-        body:SingleChildScrollView(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children:generateColumn()
+        body:
+        RefreshIndicator(
+          onRefresh: _refresh,
+          child:Shimmer(
+            child: ShimmerLoading(
+              isLoading: mm.status == ModelsStatus.updating,
+              child: ListView(
+                children: generateColumn(),
+              ),
+            ),
           ),
         )
     );
@@ -55,7 +60,7 @@ class _AppPageState extends State<AppPage> {
           title: Text("Aplicacion habilitada"),
           onChanged: (b){
             mm.app.active = !mm.app.active;
-            mm.updateApp();
+            mm.updateModel(modelType: ModelType.app, model: mm.app);
           },
           value: mm.app.active,
         ),
@@ -70,7 +75,7 @@ class _AppPageState extends State<AppPage> {
                 TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour);
                 if (timePicked != null){
                   mm.app.stopHour = timePicked;
-                  mm.updateApp();
+                  mm.updateModel(modelType: ModelType.app, model: mm.app);
                 }
               },
           ),
@@ -86,7 +91,7 @@ class _AppPageState extends State<AppPage> {
                 TimeOfDay? timePicked = await showTimePicker(context: context, initialTime: mm.app.stopHour2);
                 if (timePicked != null){
                   mm.app.stopHour2 = timePicked;
-                  mm.updateApp();
+                  mm.updateModel(modelType: ModelType.app, model: mm.app);
                 }
               }
             ),

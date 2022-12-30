@@ -1,4 +1,5 @@
 import 'package:bolita_cubana/routes/route_generator.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../filters/play.dart';
@@ -29,11 +30,11 @@ class _PadlockPageState extends State<PadlockPage> {
     });
   }
   Future<void> _refresh() async {
-    mm.updatePlays(filter: PlayFilter(padlocks: [mm.padlock.id]));
+    mm.updateModels(modelType: ModelType.play,filter: PlayFilter(padlocks: [mm.selectedPadlock!.id]));
     setState(() {
-      print(mm.padlock.toUpdateMap());
-      _nameController..text = mm.padlock.name;
-      _phoneController..text = mm.padlock.phone;
+
+      _nameController..text = mm.selectedPadlock!.name;
+      _phoneController..text = mm.selectedPadlock!.phone;
     });
   }
   @override
@@ -46,7 +47,7 @@ class _PadlockPageState extends State<PadlockPage> {
       });
     }
     loading = (mm.status == ModelsStatus.updating);
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: const Text("Candados"),
       ),
@@ -61,13 +62,6 @@ class _PadlockPageState extends State<PadlockPage> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-          onPressed: (){
-            mm.showContinuePlayingDialog = false;
-            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
-          },
-          label: Text("VOLVER AL INICIO")
-      ),
     );
   }
   List<Widget> generateColumn(){
@@ -80,16 +74,18 @@ class _PadlockPageState extends State<PadlockPage> {
     );
     List<Widget> plays = [];
     for (var play in mm.plays){
-      plays.add(
-        Center(
-          child: PlayListTile(
-              play: play,
-              onTap: (){
+      if (play.padlock == mm.selectedPadlock!.id) {
+        plays.add(
+            Center(
+              child: PlayListTile(
+                  play: play,
+                  onTap: () {
 
-              }
-          ),
-        )
-      );
+                  }
+              ),
+            )
+        );
+      }
     }
     list.add(
       Padding(
@@ -134,10 +130,9 @@ class _PadlockPageState extends State<PadlockPage> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                   onPressed: (){
-                    mm.showContinuePlayingDialog = false;
-                    mm.padlock.name = _nameController.text;
-                    mm.padlock.phone = _phoneController.text;
-                    mm.updatePadlock(model: mm.padlock).then((value) {
+                    mm.selectedPadlock!.name = _nameController.text;
+                    mm.selectedPadlock!.phone = _phoneController.text;
+                    mm.updateModel(modelType: ModelType.padlock,model: mm.selectedPadlock!).then((value) {
                       setState(() {
                         navigate = true;
                       });

@@ -1,5 +1,6 @@
 export 'package:bolita_cubana/views/auth/login.dart';
 export 'package:bolita_cubana/views/auth/register_user.dart';
+export 'package:bolita_cubana/views/auth/change_password.dart';
 export 'package:bolita_cubana/views/welcome/welcome.dart';
 export 'package:bolita_cubana/views/loading_view.dart';
 export 'package:bolita_cubana/views/main/home.dart';
@@ -17,3 +18,6 @@ export 'package:bolita_cubana/views/main/generate_ticket.dart';
 export 'package:bolita_cubana/views/main/collectors.dart';
 export 'package:bolita_cubana/views/main/collector.dart';
 export 'package:bolita_cubana/views/main/search_play.dart';
+export 'package:bolita_cubana/views/main/sell_padlocks.dart';
+export 'package:bolita_cubana/views/main/money_generated_month.dart';
+export 'package:bolita_cubana/views/main/enabled_months.dart';

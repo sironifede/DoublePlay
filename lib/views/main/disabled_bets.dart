@@ -1,3 +1,5 @@
+import 'package:bolita_cubana/models/model.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -22,7 +24,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      await mm.updateDisabledBets();
+      mm.updateModels(modelType: ModelType.disabledBets);
       updateNumbers();
     });
   }
@@ -45,7 +47,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
+      child: CustomScaffold(
         appBar: AppBar(
           actions: [
             DropdownButton<String>(
@@ -58,7 +60,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
 
                     month = i;
 
-                    await mm.updateDisabledBets();
+                    mm.updateModels(modelType: ModelType.disabledBets);
                     updateNumbers();
                     break;
                   }
@@ -139,7 +141,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
                 child: ElevatedButton(
                     onPressed: (){
                       mm.disabledBets[month].betNumbers = betNumbers;
-                      mm.updateDisabledBet(model: mm.disabledBets[month]).then((value) {
+                      mm.updateModel(modelType: ModelType.disabledBets,model: mm.disabledBets[month]).then((value) {
                         updateNumbers();
                       });
                     },

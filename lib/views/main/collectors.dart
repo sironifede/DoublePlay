@@ -1,5 +1,8 @@
 
 import 'package:animations/animations.dart';
+import 'package:bolita_cubana/api_connection/api.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -25,7 +28,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
   bool selectingCollector = false;
   List<CollectorElement> elements = [];
   late ModelsManager mm;
-  ModelOptions collectorModelOptions = ModelOptions(hasMore: false, page: 1);
+  ModelOptions collectorModelOptions = ModelOptions(fetchedModels: FetchedModels(hasMore: false,models: []),hasError: false, page: 1);
 
   TextEditingController _nameController = TextEditingController();
   TextEditingController _listersController = TextEditingController();
@@ -61,8 +64,21 @@ class _CollectorsPageState extends State<CollectorsPage> {
     });
   }
   Future<void> _refresh() async {
-    await mm.updateUsers();
-    collectorModelOptions = await mm.updateCollectors(filter: collectorFilter);
+   collectorModelOptions = await mm.updateModels(modelType: ModelType.collector,filter: collectorFilter);
+   List<int> collectorUsers = [];
+   List<int> users = [];
+   for (var collector in mm.collectors){
+     users.add(collector.user);
+     users.addAll(collector.listers);
+     collectorUsers.add(collector.user);
+
+   }
+   await mm.updateModels(modelType: ModelType.user,filter: UserFilter(), newList: users);
+   for (var user in mm.users){
+     if (collectorUsers.contains(user.id)){
+       user.isCollector = true;
+     }
+   }
   }
   @override
   Widget build(BuildContext context) {
@@ -82,7 +98,15 @@ class _CollectorsPageState extends State<CollectorsPage> {
       if (!selectingElements) {
         elements = [];
         for (var collector in mm.collectors) {
-          elements.add(CollectorElement(collector: collector));
+          for (var user in mm.users){
+            if (user.id == collector.user){
+              if (user.username.contains(_nameController.text)) {
+                elements.add(
+                    CollectorElement(collector: collector, user: user));
+                break;
+              }
+            }
+          }
         }
       }
     }
@@ -95,7 +119,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
       }
     }
 
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text("Administrar colectores"),
         actions: <Widget>[
@@ -121,13 +145,6 @@ class _CollectorsPageState extends State<CollectorsPage> {
                                       hintText: collectorFilter.name.getHintText,
                                     ),
                                   ),
-                                  TextField(
-                                    controller: _listersController,
-                                    decoration: InputDecoration(
-                                      labelText: collectorFilter.listers.getLabelText,
-                                      hintText: collectorFilter.listers.getHintText,
-                                    ),
-                                  ),
                                 ],
                               ),
                               actions: [
@@ -143,8 +160,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
                                       filtering = true;
                                       Navigator.of(context).pop();
                                       collectorFilter.name.value = _nameController.text;
-                                      collectorFilter.listers.value = _listersController.text;
-                                      collectorModelOptions = await mm.updateCollectors(filter: collectorFilter);
+                                      _refresh();
 
                                     },
                                     child: Text("FILTRAR")
@@ -227,7 +243,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
     setState(() {
       element.deleting = true;
     });
-    mm.removeUser(model: element.collector.user).then((v) {
+    mm.removeModel(modelType: ModelType.user,model: element.collector.user).then((v) {
       elements.remove(element);
       mm.collectors.remove(element.collector);
       bool continueDeleting = false;
@@ -283,50 +299,59 @@ class _CollectorsPageState extends State<CollectorsPage> {
 
     bool isSelectingElements = false;
     for (var element in elements) {
+
       if (element.selected) {
         isSelectingElements = true;
       }
 
       list.add(
-        CollectorWidget(
-          addUsers: (){
-            showAddDialog(element);
-          },
-          onTapUser: (User user) async {
-            element.updating = true;
-            element.collector.listers.remove(user.id);
-            await mm.updateCollector(model: element.collector);
-            element.updating = false;
-          },
-          users: mm.users,
-          element: element,
-          onTap: () {
-            if (selectingElements) {
-              setState(() {
-                element.selected = !element.selected;
-              });
-            }else{
-              mm.selectCollector(element.collector);
-              Navigator.of(context).pushNamed(Routes.collector);
-            }
-          },
-          onLongPress: () {
-            if (!selectingElements) {
-              setState(() {
-                selectingElements = true;
-              });
-            }
-            setState(() {
-              element.selected = !element.selected;
-            });
-          } ,
-          selectingElements: selectingElements,
+        OpenContainer(
+          openBuilder: (_, closeContainer) => const CollectorPage(),
+          tappable: false,
+          closedColor: Theme.of(context).dialogBackgroundColor,
+          openColor: Colors.transparent,
+          closedBuilder: (_, openContainer) =>
+              CollectorWidget(
+                addUsers: (){
+                  showAddDialog(element);
+                },
+                onTapUser: (User user) async {
+                  element.updating = true;
+                  element.collector.listers.remove(user.id);
+                  await mm.updateModel(modelType: ModelType.collector,model: element.collector);
+                  element.updating = false;
+                },
+                users: mm.users,
+                element: element,
+                onTap: () {
+                  if (selectingElements) {
+                    setState(() {
+                      element.selected = !element.selected;
+                    });
+                  }else{
+                    mm.selectedCollector = element.collector;
+                    Navigator.of(context).pushNamed(Routes.collector);
+                  }
+                },
+                onLongPress: () {
+                  if (!selectingElements) {
+                    setState(() {
+                      selectingElements = true;
+                    });
+                  }
+                  setState(() {
+                    element.selected = !element.selected;
+                  });
+                } ,
+                selectingElements: selectingElements,
+              ),
         ),
+
       );
     }
 
 
-    if (collectorModelOptions.hasMore){
+    if (collectorModelOptions.fetchedModels.hasMore){
       if (addingModels){
         list.add(
             Center(
@@ -341,7 +366,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
                   onPressed: () async {
                     addingModels = true;
                     collectorModelOptions.page ++;
-                    collectorModelOptions = await mm.updateCollectors(filter: collectorFilter, loadMore: true,page: collectorModelOptions.page);
+                    collectorModelOptions = await mm.updateModels(modelType: ModelType.collector,filter: collectorFilter,page: collectorModelOptions.page);
                   },
                 )
             )
@@ -380,7 +405,17 @@ class _CollectorsPageState extends State<CollectorsPage> {
 
     return list;
   }
-  void showAddDialog(var element) {
+  void showAddDialog(var element) async {
+    await mm.updateModels(modelType: ModelType.user, filter: UserFilter(isSuperUser:false,isStaff: false));
+    List<int> collectorUsers = [];
+    for (var collector in mm.collectors){
+      collectorUsers.add(collector.user);
+    }
+    for (var user in mm.users){
+      if (collectorUsers.contains(user.id)){
+        user.isCollector = true;
+      }
+    }
     showDialog(
         context: context,
         builder: (c){
@@ -394,6 +429,9 @@ class _CollectorsPageState extends State<CollectorsPage> {
                     if (element.collector.listers.contains(user.id)){
                       add  = false;
                     }
+                  }
+                  if (user.isStaff || user.isSuperuser){
+                    add = false;
                   }
 
                   if (add) {
@@ -417,7 +455,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
                                 element.collector.listers.add(user.id);
                                 element.updating = true;
                               });
-                              await mm.updateCollector(model: element.collector);
+                              await mm.updateModel(modelType:ModelType.collector,model: element.collector);
                               element.updating = false;
                             },
                           ),
@@ -429,7 +467,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
                   title: Text("Elige el usario a añadir"),
                   content: SingleChildScrollView(
                     child: Column(
-                      children: users,
+                      children: (users.isEmpty)?[Text("No hay mas usuarios para añadir")]: users,
                     ),
                   ),
                 );
@@ -442,10 +480,11 @@ class _CollectorsPageState extends State<CollectorsPage> {
 
 class CollectorElement {
   final Collector collector;
+  final User user;
   bool selected;
   bool deleting = false;
   bool updating = false;
-  CollectorElement({required this.collector, this.selected = false});
+  CollectorElement({required this.collector,required this.user, this.selected = false});
 }
 class CollectorWidget extends StatelessWidget {
   CollectorWidget({super.key, required this.element, required this.onTap, this.onLongPress, this.selectingElements = false, required this.users, this.onTapUser, this.addUsers});
@@ -485,25 +524,23 @@ class CollectorWidget extends StatelessWidget {
       )
     );
 
-    return Card(
-      child: ExpansionTile(
-        title: ListTile(
-          leading: (selectingElements) ? Checkbox(
-            value: element.selected,
-            onChanged: (b) {},
-          ) : null,
-          selected: element.selected,
-          onLongPress: onLongPress,
-          trailing: (element.deleting || element.updating) ? CircularProgressIndicator() : null,
-          title: Text("${element.collector.user.username}"),
-          subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."):
-          Text("Id: ${element.collector.id}\n${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"} \nColector creado: ${(element.collector.user.dateJoined == null)
-              ? "No se sabe"
-              : DateFormat('yyyy-MMMM-dd hh:mm a').format(element.collector.user.dateJoined!.toLocal())}"),
-          onTap: onTap,
-        ),
-        children: list
+    return ExpansionTile(
+      title: ListTile(
+        leading: (selectingElements) ? Checkbox(
+          value: element.selected,
+          onChanged: (b) {},
+        ) : null,
+        selected: element.selected,
+        onLongPress: onLongPress,
+        trailing: (element.deleting || element.updating) ? CircularProgressIndicator() : null,
+        title: Text("${element.user.username}"),
+        subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."):
+        Text("Id: ${element.collector.id}\n${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"} \nColector creado: ${(element.user.dateJoined == null)
+            ? "No se sabe"
+            : DateFormat('yyyy-MMMM-dd HH:mm a').format(element.user.dateJoined!.toLocal())}"),
+        onTap: onTap,
       ),
+      children: list
     );
   }
 }

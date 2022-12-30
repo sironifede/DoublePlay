@@ -1,4 +1,5 @@
 import 'package:bolita_cubana/filters/filters.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -48,28 +49,24 @@ class _PlayPageState extends State<PlayPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async{
-      await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
-      mm.plays = [];
-      List<int> padlocks = [];
-      for (var padlock in mm.padlocks) {
-        padlocks.add(padlock.id);
-      }
-      mm.updatePlays(filter: PlayFilter(padlocks: padlocks),loadMore: true);
-      if (!mm.firstPlay){
-        setState(() {
-          mm.firstPlay = false;
-          if (mm.play.type == PlayType.JSA || mm.play.type == PlayType.JDA){
+      if (!mm.newPlay){
+        if (mm.selectedPlay!.type == PlayType.JSA || mm.selectedPlay!.type == PlayType.JDA) {
+          setState(() {
             random = true;
-          }
-          dayNumberPicked = true;
-          nightNumberPicked = true;
-          betNumberPicked = true;
-        });
-
-      }else{
-        mm.updateDisabledNumbers();
-        mm.updateDisabledBets();
+            dayNumberPicked = true;
+            nightNumberPicked = true;
+            betNumberPicked = true;
+          });
+        }else{
+          setState(() {
+            random = false;
+            dayNumberPicked = false;
+            nightNumberPicked = false;
+            betNumberPicked = false;
+          });
+        }
       }
+      _refresh();
     });
   }
   resetScreen() async{
@@ -81,11 +78,38 @@ class _PlayPageState extends State<PlayPage> {
     _refresh();
   }
   Future<void> _refresh() async {
-    await mm.updatePadlocks(filter: PadlockFilter(month: mm.padlock.month.toString()));
-    mm.plays = [];
-    await mm.updatePlays(filter: PlayFilter(month: mm.padlock.month.toString(),padlocks: [mm.padlock.id]),);
-    mm.updateDisabledNumbers();
-    mm.updateDisabledBets();
+    if (!mm.newPlay){
+      await mm.updateModels(filter: PadlockFilter(users: [mm.user.id],playing: true), modelType: ModelType.padlock);
+      for (var padlock in mm.padlocks){
+        if (padlock.user == mm.user.id){
+          if (padlock.playing){
+            mm.selectedPadlock = padlock;
+            break;
+          }
+        }
+      }
+      if (mm.selectedPadlock != null) {
+        await mm.updateModels(filter: PlayFilter(padlocks: [mm.selectedPadlock!.id]), modelType: ModelType.play);
+        for (var play in mm.plays){
+          if (play.padlock == mm.selectedPadlock!.id){
+            if (!play.confirmed){
+              mm.selectedPlay = play;
+              if (mm.selectedPlay!.type == PlayType.JSA || mm.selectedPlay!.type == PlayType.JDA) {
+                setState(() {
+                  random = true;
+                  dayNumberPicked = true;
+                  nightNumberPicked = true;
+                  betNumberPicked = true;
+                });
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+    mm.updateModels(modelType: ModelType.disabledNumbers);
+    mm.updateModels(modelType: ModelType.disabledBets);
   }
 
   List prices = [5, 10, 15, 20, 25, 30, 40, 50, 100, 200];
@@ -94,47 +118,62 @@ class _PlayPageState extends State<PlayPage> {
     int bet = 0;
     if (dayNumberPicked && nightNumberPicked){
       int cant = 0;
+      List<int> padlocks = [];
+      for (var padlock in mm.padlocks){
+        if (padlock.month == mm.selectedPadlock!.month && !padlock.selled) {
+          padlocks.add(padlock.id);
+        }
+      }
       for (var play in mm.plays){
-        if (mm.play.nightNumber == play.nightNumber && mm.play.dayNumber == play.dayNumber){
-          print("${play.toUpdateMap()}");
-          bet += play.bet;
-        }
-        if (mm.play.dayNumber == play.nightNumber && mm.play.nightNumber == play.dayNumber && [PlayType.JDA,PlayType.JD].contains(play.type)){
-          print("${play.toUpdateMap()}");
-          bet += play.bet;
-        }
-        if (mm.play.dayNumber == play.nightNumber && mm.play.nightNumber == play.dayNumber && [PlayType.JSA,PlayType.JS].contains(play.type) && [PlayType.JDA,PlayType.JD].contains(mm.play.type)){
-          print("${play.toUpdateMap()}");
-          bet += play.bet;
+        if (padlocks.contains(play.padlock)) {
+          if (play.confirmed) {
+
+            if (mm.selectedPlay!.nightNumber == play.nightNumber &&
+                mm.selectedPlay!.dayNumber == play.dayNumber) {
+              bet += play.bet;
+            }
+            if (mm.selectedPlay!.dayNumber == play.nightNumber &&
+                mm.selectedPlay!.nightNumber == play.dayNumber &&
+                [PlayType.JDA, PlayType.JD].contains(play.type)) {
+              bet += play.bet;
+            }
+            if (mm.selectedPlay!.dayNumber == play.nightNumber &&
+                mm.selectedPlay!.nightNumber == play.dayNumber &&
+                [PlayType.JSA, PlayType.JS].contains(play.type) &&
+                [PlayType.JDA, PlayType.JD].contains(mm.selectedPlay!.type)) {
+              bet += play.bet;
+            }
+          }
         }
       }
     }
     int sub = 0;
-    if ([PlayType.JDA,PlayType.JD].contains(mm.play.type)){
+    if ([PlayType.JDA,PlayType.JD].contains(mm.selectedPlay!.type)){
       sub = 100;
     }
-    print(bet);
+    print("total bet: $bet");
+
     for (var price in prices) {
 
       if ((bet + price - sub) <= 100 ) {
-        if (([PlayType.JDA,PlayType.JD].contains(mm.play.type) && price == 200) || ![PlayType.JDA,PlayType.JD].contains(mm.play.type) && price != 200) {
+        if (([PlayType.JDA,PlayType.JD].contains(mm.selectedPlay!.type) && price == 200) || ![PlayType.JDA,PlayType.JD].contains(mm.selectedPlay!.type) && price != 200) {
           list.add(
               OutlinedButton(
                   onPressed: () {
-                    if (price != mm.play.bet) {
+                    if (mm.selectedPlay!.bet != price) {
                       setState(() {
-                        mm.play.bet = price;
+                        mm.selectedPlay!.bet = price;
                         betNumberPicked = true;
                       });
                     } else {
                       setState(() {
-                        mm.play.bet = 1;
+                        mm.selectedPlay!.bet = 0;
                         betNumberPicked = false;
                       });
                     }
                   },
                   style: OutlinedButton.styleFrom(
-                    backgroundColor: (price == mm.play.bet && betNumberPicked)
+                    backgroundColor: (price == mm.selectedPlay!.bet && betNumberPicked)
                         ? Colors.green
                         : Colors.black,
                     minimumSize: Size.zero, // Set this
@@ -151,172 +190,90 @@ class _PlayPageState extends State<PlayPage> {
     return list;
   }
 
-  void getRandomNumbers()
-  {
+  void getRandomNumbers() async  {
 
     _isVisible = true;
     dayNumberPicked = false;
     nightNumberPicked = false;
     random = true;
-    mm.play.type = (mm.play.type == PlayType.JD || mm.play.type == PlayType.JDA)? PlayType.JDA: PlayType.JSA;
-    if (mm.padlock.id != mm.play.padlock.id){
-      mm.createPlay(model: mm.play).then((value) {
-        setState(() {
-          double toOffset = mm.play.dayNumber * 60;
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            _scrollDayController.animateTo(
-                toOffset,
-                duration: Duration(seconds: 3),
-                curve: Curves.easeIn
-            );
-          });
-          toOffset = mm.play.nightNumber * 60;
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            _scrollNightController.animateTo(
-                toOffset,
-                duration: Duration(seconds: 3),
-                curve: Curves.easeIn
-            ).then((value) {
-              setState(() {
-                dayNumberPicked = true;
-                nightNumberPicked = true;
-                _isVisible = false;
-              });
-            });
+    if (mm.selectedPlay != null) {
+      mm.selectedPlay!.type = (mm.selectedPlay!.type == PlayType.JD || mm.selectedPlay!.type == PlayType.JDA) ? PlayType.JDA : PlayType.JSA;
+      if (mm.newPlay){
+        mm.newPlay = false;
+        mm.selectedPadlock = await mm.createModel( modelType: ModelType.padlock, model: mm.selectedPadlock!) as Padlock;
+        mm.selectedPlay!.padlock = mm.selectedPadlock!.id;
+        mm.createModel( modelType: ModelType.play, model: mm.selectedPlay!).then((value) {
+          mm.selectedPlay = value as Play;
+          setState(() {
+            dayNumberPicked = true;
+            nightNumberPicked = true;
+            _isVisible = false;
           });
         });
-      });
-    }else {
-
-
-      mm.updatePlay(model: mm.play).then((value) {
-        setState(() {
-          double toOffset = mm.play.dayNumber * 60;
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            _scrollDayController.animateTo(
-                toOffset,
-                duration: Duration(seconds: 3),
-                curve: Curves.easeIn
-            );
-          });
-          toOffset = mm.play.nightNumber * 60;
-          SchedulerBinding.instance.addPostFrameCallback((_) {
-            _scrollNightController.animateTo(
-                toOffset,
-                duration: Duration(seconds: 3),
-                curve: Curves.easeIn
-            ).then((value) {
-              setState(() {
-                dayNumberPicked = true;
-                nightNumberPicked = true;
-                _isVisible = false;
-              });
+      }else{
+        if (mm.selectedPlay!.padlock != mm.selectedPadlock!.id){
+          mm.createModel( modelType: ModelType.play, model: mm.selectedPlay!).then((value) {
+            mm.selectedPlay = value as Play;
+            setState(() {
+              dayNumberPicked = true;
+              nightNumberPicked = true;
+              _isVisible = false;
             });
           });
-        });
-      });
+        }else{
+          mm.updateModel(modelType: ModelType.play, model: mm.selectedPlay!).then((value) {
+            mm.selectedPlay = value as Play;
+            setState(() {
+              dayNumberPicked = true;
+              nightNumberPicked = true;
+              _isVisible = false;
+            });
+          });
+        }
+      }
+
     }
 
   }
 
   Future<void> updatePlays() async{
     update = false;
-    await mm.updatePlays(filter: PlayFilter(dayNumber: mm.play.dayNumber.toString(),nightNumber: mm.play.nightNumber.toString(),month: mm.padlock.month.toString(),confirmed: true),loadMore: true);
-    await mm.updatePlays(filter: PlayFilter(dayNumber: mm.play.nightNumber.toString(),nightNumber: mm.play.dayNumber.toString(),month: mm.padlock.month.toString(),confirmed: true),loadMore: true);
+    ModelOptions modelOptions = await mm.updateModels(modelType: ModelType.play,filter: PlayFilter(selled:false,dayNumber: mm.selectedPlay!.dayNumber.toString(),nightNumber: mm.selectedPlay!.nightNumber.toString(),month: mm.selectedPadlock!.month.toString(),confirmed: true));
+    ModelOptions modelOptions2 = await mm.updateModels(modelType: ModelType.play,filter: PlayFilter(selled:false,dayNumber: mm.selectedPlay!.nightNumber.toString(),nightNumber: mm.selectedPlay!.dayNumber.toString(),month: mm.selectedPadlock!.month.toString(),confirmed: true));
+
+    List<Model> models = modelOptions.fetchedModels.models;
+    models.addAll(modelOptions2.fetchedModels.models);
+    List<int> padlocks = [];
+    for (var play in models){
+      if (!padlocks.contains((play as Play).padlock)){
+        padlocks.add((play as Play).padlock);
+      }
+    }
+
+    await mm.updateModels(modelType: ModelType.padlock,filter: PadlockFilter(), newList: padlocks);
   }
+
 
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    if (mm.user.userStatus == UserStatus.unauthorized){
-      mm.user.userStatus = UserStatus.unauthenticated;
-      Future.delayed(Duration(milliseconds:1), (){
-        showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                icon: const Icon(Icons.warning),
-                title: Text("Tu usuario ha sido deshabilitado o eliminado no puedes acceder a la app hasta que se te permita por un admin."),
-                actions: [
-                  TextButton(
-                    child: Text("CERRAR SESION"),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                  TextButton(
-                    child: Text("ACEPTAR"),
-                    onPressed: () {
-                      SystemNavigator.pop();
-
-                    },
-                  ),
-                ],
-              );
-            }).then((value){
-          if (value != null){
-            if (value){
-              Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-            }
-          }else{
-            SystemNavigator.pop();
-          }
-        });
-      });
-    }else if (mm.user.userStatus == UserStatus.appNotActive) {
-      mm.user.userStatus = UserStatus.unauthenticated;
-      Future.delayed(Duration(milliseconds: 1), () {
-        showDialog(
-            context: context,
-            builder: (_) {
-              return AlertDialog(
-                icon: const Icon(Icons.warning),
-                title: Text(
-                    "La aplicacion no esta habilitada, se podra usar cuando un administrador la habilite."),
-                actions: [
-                  TextButton(
-                    child: Text("CERRAR SESION"),
-                    onPressed: () {
-                      Navigator.of(context).pop(true);
-                    },
-                  ),
-                  TextButton(
-                    child: Text("ACEPTAR"),
-                    onPressed: () {
-                      SystemNavigator.pop();
-                    },
-                  ),
-                ],
-              );
-            }).then((value) {
-          if (value != null){
-            if (value){
-              Navigator.of(context).pushNamedAndRemoveUntil(Routes.welcome, (Route<dynamic> route) => false);
-            }
-          }else{
-            SystemNavigator.pop();
-          }
-        });
-      });
-    }
 
     if (!random && dayNumberPicked && nightNumberPicked && update){
       Future.delayed(Duration(milliseconds: 1),(){
         updatePlays();
       });
-
     }
 
     for (var j in mm.disabledBets) {
-      if (j.month == mm.padlock.month) {
+      if (j.month == mm.selectedPadlock!.month) {
         prices = prices.toSet().difference(j.betNumbers.toSet()).toList();
         break;
       }
     }
 
     for (var i in mm.disabledNumbers) {
-      if (i.month == mm.padlock.month) {
-        if (mm.padlock.playing) {
+      if (i.month == mm.selectedPadlock!.month) {
+        if (mm.selectedPadlock!.playing) {
           dayNumbers =
               dayNumbers.toSet().difference(i.dayNumbers.toSet()).toList();
           nightNumbers =
@@ -326,43 +283,42 @@ class _PlayPageState extends State<PlayPage> {
       }
     }
     if (random){
-      if (mm.play.type == PlayType.JS){
-        mm.play.type = PlayType.JSA;
+      if (mm.selectedPlay!.type == PlayType.JS){
+        mm.selectedPlay!.type = PlayType.JSA;
       }
-      if (mm.play.type == PlayType.JD){
-        mm.play.type = PlayType.JDA;
+      if (mm.selectedPlay!.type == PlayType.JD){
+        mm.selectedPlay!.type = PlayType.JDA;
       }
     }else{
-      if (mm.play.type == PlayType.JSA){
-        mm.play.type = PlayType.JS;
+      if (mm.selectedPlay!.type == PlayType.JSA){
+        mm.selectedPlay!.type = PlayType.JS;
       }
-      if (mm.play.type == PlayType.JDA){
-        mm.play.type = PlayType.JD;
+      if (mm.selectedPlay!.type == PlayType.JDA){
+        mm.selectedPlay!.type = PlayType.JD;
       }
     }
 
 
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
-        leading: (getCurrentPlayLength() == 0)?IconButton(
+        leading: IconButton(
           icon: Icon(Icons.arrow_back_outlined),
           onPressed: (){
-            mm.removePadlock(model: mm.padlock);
-            mm.showContinuePlayingDialog = false;
-            Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
+
+            Navigator.of(context).pop();
           },
-        ): null,
+        ),
         title: CustomTextButton(
-          label: "${(mm.play.type == PlayType.JS || mm.play.type == PlayType.JSA)? simplePlayLabel: doublePlayLabel}${ (random)? " Aleatoria": "" }",
+          label: "${(mm.selectedPlay!.type == PlayType.JS || mm.selectedPlay!.type == PlayType.JSA)? simplePlayLabel: doublePlayLabel}${ (random)? " Aleatoria": "" }",
           onPressed: (random)? null:() {
             setState(() {
 
               betNumberPicked = false;
-              if (mm.play.type == PlayType.JS){
-                mm.play.type = PlayType.JD;
+             if (mm.selectedPlay!.type == PlayType.JS){
+                mm.selectedPlay!.type = PlayType.JD;
               }else {
-                if (mm.play.type == PlayType.JD) {
-                  mm.play.type = PlayType.JS;
+                if (mm.selectedPlay!.type == PlayType.JD) {
+                  mm.selectedPlay!.type = PlayType.JS;
                 }
               }
 
@@ -377,7 +333,7 @@ class _PlayPageState extends State<PlayPage> {
           InkWell(child: Image.asset(
             'assets/gifs/dice_rolling.gif', height: 60, width: 60,color: Colors.red,colorBlendMode: BlendMode.modulate),
             onTap:(){
-              if (mm.play.nRandom >= 3) {
+              if (mm.selectedPlay!.nRandom >= 3) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text("No puedes realizar mas jugadas aleatorias.")),
@@ -401,7 +357,7 @@ class _PlayPageState extends State<PlayPage> {
 
                     children: [
                       (!random)? Text(""):ListTile(
-                        title: Text("Intentos restatnes de la jugada aleatoria: ${3 - mm.play.nRandom}"),
+                        title: Text("Intentos restatnes de la jugada aleatoria: ${3 - mm.selectedPlay!.nRandom}"),
                       ),
                       ListTile(
                         title: Text("Cantidad de jugadas: ${getCurrentPlayLength()} de 10 jugadas"),
@@ -512,7 +468,7 @@ class _PlayPageState extends State<PlayPage> {
                                         focusColor: Colors.red.shade900,
                                         title: Center(
                                             child: Text(
-                                              "${mm.play.dayNumber.toString().padLeft(3, '0')}",
+                                              "${mm.selectedPlay!.dayNumber.toString().padLeft(3, '0')}",
                                               style: const TextStyle(fontSize: 40),
                                             )
                                         ),
@@ -555,7 +511,7 @@ class _PlayPageState extends State<PlayPage> {
                                                   update = true;
                                                   betNumberPicked = false;
                                                   dayNumberPicked = true;
-                                                  mm.play.dayNumber = dayNumbers[i];
+                                                  mm.selectedPlay!.dayNumber = dayNumbers[i];
                                                 });
                                               }
                                             },
@@ -586,7 +542,7 @@ class _PlayPageState extends State<PlayPage> {
                                           focusColor: Colors.blue.shade900,
                                           title: Center(
                                               child: Text(
-                                                "${mm.play.nightNumber.toString().padLeft(3, '0')}",
+                                                "${mm.selectedPlay!.nightNumber.toString().padLeft(3, '0')}",
                                                 style: const TextStyle(fontSize: 40),
                                               )
                                           ),
@@ -629,7 +585,7 @@ class _PlayPageState extends State<PlayPage> {
                                                   update = true;
                                                   betNumberPicked = false;
                                                   nightNumberPicked = true;
-                                                  mm.play.nightNumber = nightNumbers[i];
+                                                  mm.selectedPlay!.nightNumber = nightNumbers[i];
                                                 });
                                               }
                                             },
@@ -666,18 +622,39 @@ class _PlayPageState extends State<PlayPage> {
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: ElevatedButton(
-                                  onPressed: (getCurrentPlayLength() < 9 && (dayNumberPicked && nightNumberPicked && betNumberPicked))? () async {
-
-                                      mm.play.padlock = mm.padlock;
-                                      mm.play.confirmed = true;
+                                  onPressed: (getCurrentPlayLength() < 9 && (dayNumberPicked && nightNumberPicked && betNumberPicked) && mm.selectedPadlock!.playing)? () async {
+                                      if (mm.newPlay){
+                                        mm.selectedPadlock = await mm.createModel(modelType: ModelType.padlock, model: mm.selectedPadlock!) as Padlock;
+                                        mm.newPlay = false;
+                                      }
+                                      mm.selectedPlay!.padlock = mm.selectedPadlock!.id;
+                                      mm.selectedPlay!.confirmed = true;
                                       if (random){
-                                        mm.updatePlay(model: mm.play).then((value) {
-                                          mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
+                                        mm.updateModel(modelType: ModelType.play, model: mm.selectedPlay!).then((value) {
+                                          mm.selectedPlay = Play(
+                                              id: 0,
+                                              padlock: 0,
+                                              bet: 5,
+                                              confirmed: false,
+                                              dayNumber: 1,
+                                              nightNumber: 1,
+                                              nRandom: 0,
+                                              type: PlayType.JS
+                                          );
                                           resetScreen();
                                         });
                                       }else{
-                                        mm.createPlay(model: mm.play).then((value) {
-                                          mm.play = Play(padlock: Padlock(id: 0, user: mm.user));
+                                        mm.createModel(modelType: ModelType.play, model: mm.selectedPlay!).then((value) {
+                                          mm.selectedPlay = Play(
+                                              id: 0,
+                                              padlock: 0,
+                                              bet: 5,
+                                              confirmed: false,
+                                              dayNumber: 1,
+                                              nightNumber: 1,
+                                              nRandom: 0,
+                                              type: PlayType.JS
+                                          );
                                           resetScreen();
                                         });
                                       }
@@ -697,22 +674,26 @@ class _PlayPageState extends State<PlayPage> {
                               child: ElevatedButton(
                                   onPressed: ((dayNumberPicked && nightNumberPicked && betNumberPicked) || (getPrices().isEmpty && (getCurrentPlayLength() == 9 && !random)))?() async {
 
-                                    mm.padlock.playing = false;
-                                    if (getPrices().isNotEmpty ) {
-                                      mm.play.confirmed = true;
+                                    if (mm.newPlay){
+                                      mm.selectedPadlock = await mm.createModel(modelType: ModelType.padlock, model: mm.selectedPadlock!) as Padlock;
+                                      mm.newPlay = false;
+                                    }
+                                    mm.selectedPadlock!.playing = false;
+                                    if (getPrices().isNotEmpty) {
+                                      mm.selectedPlay!.confirmed = true;
                                       if (random) {
-                                        await mm.updatePlay(model: mm.play);
+                                        await mm.updateModel(modelType: ModelType.play,model: mm.selectedPlay!);
                                       } else {
-                                        await mm.createPlay(model: mm.play);
+                                        await mm.createModel(modelType: ModelType.play,model: mm.selectedPlay!);
                                       }
                                     }
-                                    mm.updatePadlock(model: mm.padlock).then((value) {
+                                    mm.updateModel(modelType: ModelType.padlock,model: mm.selectedPadlock!).then((value) {
                                       ScaffoldMessenger.of(context).showSnackBar(
                                         SnackBar(
                                             content: Text("Terminaste tu jugada")),
                                       );
                                       Future.delayed(Duration(milliseconds: 1), (){
-                                        Navigator.of(context).pushNamedAndRemoveUntil(Routes.padlock, (Route<dynamic> route) => false);
+                                        Navigator.of(context).pushNamed(Routes.padlock);
                                       });
                                     });
 
@@ -747,7 +728,7 @@ class _PlayPageState extends State<PlayPage> {
   int getCurrentPlayLength(){
     int length = 0;
     for (var play in mm.plays ){
-      if (play.padlock.id == mm.padlock.id){
+      if (play.padlock == mm.selectedPadlock!.id){
         length++;
       }
     }

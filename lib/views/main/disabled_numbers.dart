@@ -2,6 +2,7 @@
 import 'package:bolita_cubana/models/models.dart';
 import 'package:bolita_cubana/routes/route_generator.dart';
 import 'package:bolita_cubana/views/main/padlock.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -32,23 +33,23 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
     super.initState();
     mm = context.read<ModelsManager>();
     Future.delayed(Duration(milliseconds: 1),() async {
-      await mm.updateDisabledNumbers();
+      await mm.updateModels(modelType: ModelType.disabledNumbers);
       updateNumbers();
     });
   }
-void updateNumbers(){
-  for (var i in mm.disabledNumbers){
-    if (month + 1 == i.month){
-      Future.delayed(Duration(milliseconds: 1),(){
-        setState(() {
-          dayNumbers = i.dayNumbers;
-          nightNumbers = i.nightNumbers;
+  void updateNumbers(){
+    for (var i in mm.disabledNumbers){
+      if (month + 1 == i.month){
+        Future.delayed(Duration(milliseconds: 1),(){
+          setState(() {
+            dayNumbers = i.dayNumbers;
+            nightNumbers = i.nightNumbers;
+          });
         });
-      });
-      break;
+        break;
+      }
     }
   }
-}
   @override
   Widget build(BuildContext context) {
 
@@ -56,7 +57,7 @@ void updateNumbers(){
 
     return DefaultTabController(
       length: 2,
-      child: Scaffold(
+      child: CustomScaffold(
           appBar: AppBar(
             actions: [
               DropdownButton<String>(
@@ -69,7 +70,7 @@ void updateNumbers(){
 
                       month = i;
 
-                      await mm.updateDisabledNumbers();
+                      await mm.updateModels(modelType: ModelType.disabledNumbers);
                       updateNumbers();
                       break;
                     }
@@ -208,8 +209,7 @@ void updateNumbers(){
                 child: ElevatedButton(
                     onPressed: () {
                       mm.disabledNumbers[month].nightNumbers = nightNumbers;
-                      mm.updateDisabledNumber(
-                          model: mm.disabledNumbers[month]).then((
+                       mm.updateModel(modelType: ModelType.disabledNumbers, model: mm.disabledNumbers[month]).then((
                           value) {
                         updateNumbers();
                       });
@@ -322,7 +322,7 @@ void updateNumbers(){
                 child: ElevatedButton(
                     onPressed: (){
                       mm.disabledNumbers[month].dayNumbers = dayNumbers;
-                      mm.updateDisabledNumber(model: mm.disabledNumbers[month]).then((value) {
+                      mm.updateModel(modelType: ModelType.disabledNumbers,model: mm.disabledNumbers[month]).then((value) {
                         updateNumbers();
                       });
                     },

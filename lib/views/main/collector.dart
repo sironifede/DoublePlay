@@ -1,5 +1,6 @@
 
 import 'package:animations/animations.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -23,7 +24,7 @@ class _CollectorPageState extends State<CollectorPage> {
   late ModelsManager mm;
   DateTime startDate = DateTime.now();
   DateTime endDate = DateTime.now();
-
+  PadlockFilter padlockFilter = PadlockFilter(users: []);
 
   @override
   initState() {
@@ -39,31 +40,47 @@ class _CollectorPageState extends State<CollectorPage> {
     });
   }
   DateTime mostRecentSunday(DateTime date) => DateTime(date.year, date.month, date.day - date.weekday % 7);
-  DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday -1));
+  DateTime mostRecentMonday(DateTime date) => DateTime(date.year, date.month, date.day - (date.weekday - 1));
   Future<void> _refresh() async {
-    await mm.updateUsers();
-    await mm.updateCollectors();
 
-    await mm.updatePadlocks(filter: PadlockFilter(users: mm.selectedCollector.listers,playing: false, creAtGt: startDate.toUtc().toString(), creAtLt: endDate.toUtc().toString()));
+    List<int> newList = [mm.selectedCollector!.user];
+    newList.addAll(mm.selectedCollector!.listers);
+    await mm.updateModels(modelType: ModelType.user,filter: UserFilter(),newList: newList);
+
+    padlockFilter.user.values = mm.selectedCollector!.listers;
+    padlockFilter.playing.value = false;
+    padlockFilter.listerMoneyCollected.value = null;
+    padlockFilter.collectorMoneyCollected.value = null;
+    padlockFilter.creAtGt.value = startDate.toUtc().toString();
+    padlockFilter.creAtLt.value = endDate.toUtc().toString();
+
+    await mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
     if (mm.user.isStaff || mm.user.isSuperuser) {
-      mm.updatePadlocks(filter: PadlockFilter(
-          users: mm.selectedCollector.listers,
-          playing: false,
-          listerMoneyCollected: true,
-          collectorMoneyCollected: false), loadMore: true);
+      padlockFilter.listerMoneyCollected.value = true;
+      padlockFilter.collectorMoneyCollected.value = false;
+      padlockFilter.creAtGt.value = endDate.toUtc().toString();
+      padlockFilter.creAtLt.value = "";
+      mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
+      mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
+      padlockFilter.creAtLt.value = startDate.toUtc().toString();
+      padlockFilter.creAtGt.value = "";
+      mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
     }else{
-      mm.updatePadlocks(filter: PadlockFilter(
-          users: mm.selectedCollector.listers,
-          playing: false,
-          listerMoneyCollected: false,
-          collectorMoneyCollected: false), loadMore: true);
+      padlockFilter.creAtGt.value = endDate.toUtc().toString();
+      padlockFilter.creAtLt.value = "";
+      padlockFilter.listerMoneyCollected.value = false;
+      padlockFilter.collectorMoneyCollected.value = false;
+      mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
+      padlockFilter.creAtLt.value = startDate.toUtc().toString();
+      padlockFilter.creAtGt.value = "";
+      mm.updateModels(modelType: ModelType.padlock,filter: padlockFilter);
     }
   }
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    return Scaffold(
+    return CustomScaffold(
       appBar: AppBar(
         title: Text("Colector"),
       ),
@@ -104,25 +121,12 @@ class _CollectorPageState extends State<CollectorPage> {
                   end = end.add(const Duration(hours: 23, minutes: 59));
                   endDate = end;
                 });
-                await mm.updatePadlocks(filter: PadlockFilter(users: mm.selectedCollector.listers,playing: false, creAtGt: startDate.toUtc().toString(), creAtLt: endDate.toUtc().toString()));
-                if (mm.user.isStaff || mm.user.isSuperuser) {
-                  mm.updatePadlocks(filter: PadlockFilter(
-                      users: mm.selectedCollector.listers,
-                      playing: false,
-                      listerMoneyCollected: true,
-                      collectorMoneyCollected: false), loadMore: true);
-                }else{
-                  mm.updatePadlocks(filter: PadlockFilter(
-                      users: mm.selectedCollector.listers,
-                      playing: false,
-                      listerMoneyCollected: false,
-                      collectorMoneyCollected: false), loadMore: true);
-                }
+                _refresh();
               }
             },
           ),
-          subtitle: Text("${DateFormat('yyyy-MMMM-dd hh:mm a').format(
-              startDate.toLocal())} \n${DateFormat('yyyy-MMMM-dd hh:mm a')
+          subtitle: Text("${DateFormat('yyyy-MMMM-dd HH:mm a').format(
+              startDate.toLocal())} \n${DateFormat('yyyy-MMMM-dd HH:mm a')
               .format(endDate.toLocal())}"),
         )
     );
@@ -134,11 +138,11 @@ class _CollectorPageState extends State<CollectorPage> {
     int moneyNotCollected = 0;
     int moneyNotCollectedInPeriod = 0;
     for (var user in mm.users) {
-      if (mm.selectedCollector.listers.contains(user.id)) {
+      if (mm.selectedCollector!.listers.contains(user.id)) {
         money = 0;
         moneyNotCollected = 0;
         for (var padlock in mm.padlocks) {
-          if (padlock.user.id == user.id) {
+          if (padlock.user == user.id) {
             if (padlock.createdAt!.isAfter(startDate) &&
                 padlock.createdAt!.isBefore(endDate)) {
               money += padlock.moneyGenerated;
@@ -158,10 +162,10 @@ class _CollectorPageState extends State<CollectorPage> {
                   onPressed: (moneyNotCollected != 0) ? () async {
                     recolecting = true;
                     for (var padlock in mm.padlocks) {
-                      if (padlock.user.id == user.id) {
+                      if (padlock.user == user.id) {
                         if (!padlock.listerMoneyCollected) {
                           padlock.listerMoneyCollected = true;
-                          mm.updatePadlock(model: padlock);
+                          mm.updateModel(modelType: ModelType.padlock,model: padlock);
                         }
                       }
                     }
@@ -175,26 +179,29 @@ class _CollectorPageState extends State<CollectorPage> {
         );
       }
     }
-    list.add(
-        Card(
-          child: ExpansionTile(
-              title: ListTile(
-                title: Text("${mm.selectedCollector.user.username}"),
-                subtitle: Text(
-                    "Id: ${mm.selectedCollector.id}\n${mm.selectedCollector
-                        .listers.length} ${(mm.selectedCollector.listers
-                        .length == 1)
-                        ? "listero"
-                        : "listeros"}\nColector creado: ${(mm.selectedCollector
-                        .user.dateJoined == null)
-                        ? "No se sabe"
-                        : DateFormat('yyyy-MMMM-dd hh:mm a').format(
-                        mm.selectedCollector.user.dateJoined!.toLocal())}"),
+    for (var user in mm.users) {
+      if (user.id == mm.selectedCollector!.user) {
+        list.add(
+            Card(
+              child: ExpansionTile(
+                  title: ListTile(
+                    title: Text("${user.username}"),
+                    subtitle: Text(
+                        "Id: ${mm.selectedCollector!.id}\n${mm.selectedCollector!
+                            .listers.length} ${(mm.selectedCollector!.listers
+                            .length == 1)
+                            ? "listero"
+                            : "listeros"}\nColector creado: ${(user.dateJoined == null)
+                            ? "No se sabe"
+                            : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
+                  ),
+                  children: users
               ),
-              children: users
-          ),
-        )
-    );
+            )
+        );
+        break;
+      }
+    }
     money = 0;
     totalMoney = 0;
     moneyNotCollected = 0;
@@ -202,7 +209,7 @@ class _CollectorPageState extends State<CollectorPage> {
     int moneyCollectedInPeriod = 0;
     int moneyCollected = 0;
     for (var padlock in mm.padlocks) {
-      if (mm.selectedCollector.listers.contains(padlock.user.id)){
+      if (mm.selectedCollector!.listers.contains(padlock.user)){
         if (padlock.createdAt!.isAfter(startDate) &&
             padlock.createdAt!.isBefore(endDate)) {
           if (padlock.listerMoneyCollected &&
@@ -254,12 +261,15 @@ class _CollectorPageState extends State<CollectorPage> {
                 onPressed: (moneyNotCollectedInPeriod == 0)? null:() async {
                   recolecting = true;
                   for (var padlock in mm.padlocks) {
-                    if (!padlock.collectorMoneyCollected &&
-                        (padlock.createdAt!.isAfter(startDate) &&
-                            padlock.createdAt!.isBefore(endDate)) &&
-                        padlock.listerMoneyCollected) {
-                      padlock.collectorMoneyCollected = true;
-                      mm.updatePadlock(model: padlock);
+                    if (mm.selectedCollector!.listers.contains(padlock.user)) {
+                      if (!padlock.collectorMoneyCollected &&
+                          (padlock.createdAt!.isAfter(startDate) &&
+                              padlock.createdAt!.isBefore(endDate)) &&
+                          padlock.listerMoneyCollected) {
+                        padlock.collectorMoneyCollected = true;
+                        mm.updateModel(
+                            modelType: ModelType.padlock, model: padlock);
+                      }
                     }
                   }
                   setState(() {
@@ -282,17 +292,21 @@ class _CollectorPageState extends State<CollectorPage> {
                 recolecting = true;
 
                 for (var padlock in mm.padlocks) {
-                  if (mm.user.isStaff || mm.user.isSuperuser) {
-                    if (!padlock.collectorMoneyCollected &&
-                        padlock.listerMoneyCollected) {
-                      padlock.collectorMoneyCollected = true;
-                      mm.updatePadlock(model: padlock);
-                    }
-                  }else{
-                    if (!padlock.collectorMoneyCollected &&
-                        !padlock.listerMoneyCollected) {
-                      padlock.listerMoneyCollected = true;
-                      mm.updatePadlock(model: padlock);
+                  if (mm.selectedCollector!.listers.contains(padlock.user)) {
+                    if (mm.user.isStaff || mm.user.isSuperuser) {
+                      if (!padlock.collectorMoneyCollected &&
+                          padlock.listerMoneyCollected) {
+                        padlock.collectorMoneyCollected = true;
+                        mm.updateModel(
+                            modelType: ModelType.padlock,model: padlock);
+                      }
+                    } else {
+                      if (!padlock.collectorMoneyCollected &&
+                          !padlock.listerMoneyCollected) {
+                        padlock.listerMoneyCollected = true;
+                        mm.updateModel(
+                            modelType: ModelType.padlock,model: padlock);
+                      }
                     }
                   }
                 }

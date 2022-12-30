@@ -1,5 +1,6 @@
 
 import 'package:flutter/cupertino.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 
 
@@ -21,10 +22,16 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const GenerateTicket());
       case Routes.month:
         return MaterialPageRoute(builder: (_) => const MonthPage());
+      case Routes.sellPadlock:
+        return MaterialPageRoute(builder: (_) => const SellPadlocksPage());
+      case Routes.moneyGenerated:
+        return MaterialPageRoute(builder: (_) => const MoneyGeneratedInMonthPage());
       case Routes.login:
         return MaterialPageRoute(builder: (_) => LoginPage());
       case Routes.registerUser:
         return MaterialPageRoute(builder: (_) => const RegisterUserPage());
+      case Routes.changePassword:
+        return MaterialPageRoute(builder: (_) => const ChangeUserPasswordPage());
       case Routes.users:
         return MaterialPageRoute(builder: (_) => const UsersPage());
       case Routes.user:
@@ -47,6 +54,8 @@ class RouteGenerator {
         return MaterialPageRoute(builder: (_) => const SearchPlayPage());
       case Routes.help:
         return MaterialPageRoute(builder: (_) => const HelpPage());
+      case Routes.enabledMonths:
+        return MaterialPageRoute(builder: (_) => const EnabledMonthsPage());
       default:
         return MaterialPageRoute(builder: (_) => const WelcomePage());
 
@@ -59,7 +68,8 @@ abstract class Routes{
   static const String welcome = '/welcome';
   static const String users = '/users';
   static const String user = '/user';
-  static const String registerUser = '/registeruser';
+  static const String registerUser = '/registerUser';
+  static const String changePassword = '/changePassword';
   static const String help = '/help';
   static const String plays = '/plays';
   static const String play = '/play';
@@ -71,6 +81,9 @@ abstract class Routes{
   static const String padlock = '/padlock';
   static const String generateTicket = '/generateTicket';
   static const String month = '/month';
+  static const String sellPadlock = '/sellPadlock';
+  static const String moneyGenerated = '/moneyGenerated';
   static const String app = '/app';
+  static const String enabledMonths = '/enabledMonths';
 
 }
