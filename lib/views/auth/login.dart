@@ -70,7 +70,7 @@ class _LoginPage extends State<LoginPage> {
     }
 
     // Constructor de la ventana Login
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text("Double Play - Inicio de sesion"),
       ),
