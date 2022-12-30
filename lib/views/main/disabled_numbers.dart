@@ -208,7 +208,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                     onPressed: () {
-                      mm.disabledNumbers[month].nightNumbers = nightNumbers;
+                      mm.disabledNumbers[month + 1].nightNumbers = nightNumbers;
                        mm.updateModel(modelType: ModelType.disabledNumbers, model: mm.disabledNumbers[month]).then((
                           value) {
                         updateNumbers();
@@ -321,7 +321,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                     onPressed: (){
-                      mm.disabledNumbers[month].dayNumbers = dayNumbers;
+                      mm.disabledNumbers[month  + 1].dayNumbers = dayNumbers;
                       mm.updateModel(modelType: ModelType.disabledNumbers,model: mm.disabledNumbers[month]).then((value) {
                         updateNumbers();
                       });

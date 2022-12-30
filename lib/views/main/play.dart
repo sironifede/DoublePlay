@@ -273,13 +273,20 @@ class _PlayPageState extends State<PlayPage> {
 
     for (var i in mm.disabledNumbers) {
       if (i.month == mm.selectedPadlock!.month) {
-        if (mm.selectedPadlock!.playing) {
-          dayNumbers =
-              dayNumbers.toSet().difference(i.dayNumbers.toSet()).toList();
-          nightNumbers =
-              nightNumbers.toSet().difference(i.nightNumbers.toSet()).toList();
-          break;
+        for (var number in i.dayNumbers){
+          print(number);
+          dayNumbers.remove(number);
         }
+        for (var number in i.nightNumbers){
+          print(number);
+          nightNumbers.remove(number);
+        }
+        dayNumbers =
+            dayNumbers.toSet().difference(i.dayNumbers.toSet()).toList();
+        nightNumbers =
+            nightNumbers.toSet().difference(i.nightNumbers.toSet()).toList();
+        break;
+
       }
     }
     if (random){
