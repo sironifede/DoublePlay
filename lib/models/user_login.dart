@@ -10,6 +10,19 @@ class UserLogin {
   };
 }
 
+class UserPassword {
+  int id;
+  String password;
+  String password2;
+
+  UserPassword({required this.id, required this.password, required this.password2});
+
+  Map <String, dynamic> toJson() => {
+    "password": password,
+    "password2": password2
+  };
+}
+
 class Token{
   String token;
 

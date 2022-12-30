@@ -1,8 +1,7 @@
-library ecoinclution_proyect.global;
 import 'dart:async';
 import 'package:bolita_cubana/api_connection/apis.dart';
-import 'package:bolita_cubana/models/disabled_bets.dart';
 import 'package:bolita_cubana/models/models.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import '../filters/filters.dart';
 
@@ -15,30 +14,32 @@ enum ModelsStatus {
 }
 
 class ModelOptions {
-  bool hasMore = false;
+  FetchedModels fetchedModels;
   int page = 1;
-  ModelOptions({required this.hasMore, required this.page});
+  bool hasError = false;
+  ModelOptions({required this.fetchedModels, required this.page, required this.hasError});
 }
 
 class ModelsManager with ChangeNotifier {
 
   ModelsStatus status = ModelsStatus.updated;
-  User user = User();
+  bool newPlay = false;
 
-  List<User> users = [];
-  User selectedUser = User();
-  List<Play> plays = [];
-  bool firstPlay = false;
-  List<Padlock> padlocks = [];
-  Padlock padlock = Padlock(id: 0,user: User());
-  Play play = Play(padlock: Padlock(id: 0,user: User()));
-  List<DisabledNumbers> disabledNumbers = [];
-  List<DisabledBets> disabledBets = [];
-  List<Collector> collectors = [];
-  Collector selectedCollector = Collector(id: 0, listers:  [], user:  User());
+  User user = User();
+  User? selectedUser;
+  Padlock? selectedPadlock;
+  Play? selectedPlay;
+  Collector? selectedCollector;
+
   App app = App(active: false, stopHour: TimeOfDay.now(), stopHour2: TimeOfDay.now());
 
-  bool showContinuePlayingDialog = false;
+  List<User> users = [];
+  List<Collector> collectors = [];
+  List<Padlock> padlocks = [];
+  List<Play> plays = [];
+  List<DisabledNumbers> disabledNumbers = [];
+  List<DisabledBets> disabledBets = [];
+  List<Month> months = [];
 
   Future<User> authenticateUser({required String username, required String password}) async {
     status = ModelsStatus.updating;
@@ -69,6 +70,24 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     return user;
   }
+
+
+  Future<Map<String,dynamic>> changePassword({required int id, String password = "", String password2 = "",}) async {
+    Map<String,dynamic> map = {};
+    status = ModelsStatus.updating;
+    notifyListeners();
+    try {
+      UserPassword userPassword = UserPassword(id: id,password:password,password2:password2);
+      map = await changeUserPassword(user:user,userPassword: userPassword);
+
+    }catch (e){
+      throw e;
+    }
+    status = ModelsStatus.updated;
+    notifyListeners();
+    return map;
+  }
+
   Future<Map<String,dynamic>> registerUser({String username = "", bool isSuperuser = false, bool isStaff = false, String password = "", String password2 = "",}) async {
     Map<String,dynamic> map = {};
     status = ModelsStatus.updating;
@@ -84,241 +103,295 @@ class ModelsManager with ChangeNotifier {
     notifyListeners();
     return map;
   }
-  Future<ModelOptions> updateUsers({Filter? filter, bool loadMore = false, int page = 1}) async {
+
+  Future<ModelOptions> updateModels({Filter? filter, int page = 1,List<int>? newList , required ModelType modelType}) async {
+    String modelString = "users";
+    List<Model> models = users;
+    switch(modelType){
+      case ModelType.user:
+        models = users;
+        modelString = "users";
+        break;
+      case ModelType.padlock:
+        models = padlocks;
+        modelString = "padlocks";
+        break;
+      case ModelType.month:
+        models = months;
+        modelString = "months";
+        break;
+      case ModelType.collector:
+        models = collectors;
+        modelString = "collectors";
+        break;
+      case ModelType.play:
+        models = plays;
+        modelString = "plays";
+        break;
+      case ModelType.disabledBets:
+        models = disabledBets;
+        modelString = "disabled-bets";
+        break;
+      case ModelType.disabledNumbers:
+        models = disabledNumbers;
+        modelString = "disabled-numbers";
+        break;
+      case ModelType.app:
+        modelString = "app";
+        break;
+    }
+
     status = ModelsStatus.updating;
     notifyListeners();
     FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
+    bool hasError = false;
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page);
-      if (loadMore){
-        for (var model in fetchedModels.models){
-          users.add(model as User);
-        }
-      }else {
-        users = [];
-        for (var model in fetchedModels.models){
-          users.add(model as User);
-        }
-      }
-    }catch (e){
-
-      await updateUserStatus(e);
-      print("updateUsers $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-    return ModelOptions(hasMore: fetchedModels.hasMore, page: page);
-  }
-  Future<void> updateUser({required User model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
-      selectedUser = await modelsApi.putModel(id:model.id,model: model) as User;
-    }catch (e){
-      await updateUserStatus(e);
-      print("updateUser $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<bool> removeUser({required User model}) async {
-    bool sameUser = false;
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "users",modelType: ModelType.user);
-      await modelsApi.deleteModel(id: model.id);
-      if (user == model) {
-        sameUser = true;
-      }
-    }catch (e){
-      await updateUserStatus(e);
-      print("removeUser $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-    return sameUser;
-  }
-
-  Future<ModelOptions> updatePlays({Filter? filter, bool loadMore = false, int page = 1}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.padlock, modelsFr: padlocks);
-      if (loadMore){
-        List playsId = [];
-        for (var play in plays){
-          playsId.add(play.id);
-        }
-        for (var model in fetchedModels.models){
-          if (!playsId.contains((model as Play).id)){
-            plays.add(model as Play);
+      if (filter != null){
+        if (newList != null){
+          for (var model in models){
+            if (newList.contains(model.id)){
+              newList.remove(model.id);
+            }
           }
-
-        }
-      }else {
-        plays = [];
-        for (var model in fetchedModels.models){
-          plays.add(model as Play);
-        }
-      }
-    }catch (e){
-      plays = [];
-      await updateUserStatus(e);
-      print("updatePlays $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-    return ModelOptions(hasMore: fetchedModels.hasMore, page: page);
-  }
-  Future<void> updatePlay({required Play model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
-      play = await modelsApi.putModel(id: model.id, model: model,modelsFr: padlocks, modelTypeFr: ModelType.padlock) as Play;
-    }catch (e){
-      await updateUserStatus(e);
-      print("updatePlay $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> createPlay({required Play model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
-      play = await modelsApi.postModel(model: model, modelsFr: padlocks, modelTypeFr: ModelType.padlock) as Play;
-    }catch (e){
-      await updateUserStatus(e);
-      print("createPlay $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<bool> removePlay({required Play model}) async {
-    bool sameUser = false;
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "plays",modelType: ModelType.play);
-      await modelsApi.deleteModel(id: model.id);
-    }catch (e){
-      await updateUserStatus(e);
-      print("updatePlays $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-    return sameUser;
-  }
-
-
-  Future<ModelOptions> updatePadlocks({Filter? filter, bool loadMore = false, int page = 1,bool change = true}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
-    try{
-      ModelsApi modelsApi = ModelsApi(token: this.user.token, modelString: "padlocks",modelType: ModelType.padlock);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page, modelTypeFr: ModelType.user, modelsFr: users);
-      if (loadMore){
-        List ids = [];
-        for (var padlock in padlocks){
-          ids.add(padlock.id);
-        }
-        print(ids);
-        for (var model in fetchedModels.models){
-          if (!ids.contains((model as Padlock).id)){
-            padlocks.add(model as Padlock);
+          if (modelType == ModelType.collector){
+            filter.idIn = ValueInFilterField(fieldName: "user_id__in");
           }
-
+          filter.idIn.values = newList;
         }
-      }else {
-        padlocks = [];
-        for (var model in fetchedModels.models){
-          padlocks.add(model as Padlock);
-        }
-
       }
-    }catch (e) {
-      padlocks = [];
-      await updateUserStatus(e);
-      print("updatePadlocks $e");
+      bool makeRequest = true;
+      if (newList != null){
+        if (newList.isEmpty){
+          makeRequest = false;
+        }
+      }
+      if (makeRequest) {
+
+
+        ModelsApi modelsApi = ModelsApi(
+            token: user.token, modelString: modelString, modelType: modelType);
+        fetchedModels = await modelsApi.getModels(filter: filter, page: page);
+      }
+      List<int> lastIds = [];
+      for (var model in models){
+        lastIds.add(model.id);
+      }
+      for (var newModel in fetchedModels.models){
+        bool add = true;
+        for (var i = 0; i < models.length; i++){
+          if (newModel.id == models[i].id){
+            models[i]  = newModel;
+            add = false;
+            break;
+          }
+        }
+        if (add){
+          models.add(newModel);
+        }
+      }
+    }catch (e){
+      hasError = true;
+      print("fallo todo $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
-    return ModelOptions(hasMore: fetchedModels.hasMore, page: page);
+    return ModelOptions(fetchedModels: fetchedModels, page: page, hasError: hasError);
   }
-  Future<void> createPadlock({required Padlock model}) async {
+  Future<Model> getModel({required ModelType modelType, required Model model}) async {
+    String modelString = "users";
+    List<Model> models = users;
+    switch(modelType){
+      case ModelType.user:
+        models = users;
+        modelString = "users";
+        break;
+      case ModelType.padlock:
+        models = padlocks;
+        modelString = "padlocks";
+        break;
+      case ModelType.month:
+        models = months;
+        modelString = "months";
+        break;
+      case ModelType.collector:
+        models = collectors;
+        modelString = "collectors";
+        break;
+      case ModelType.play:
+        models = plays;
+        modelString = "plays";
+        break;
+      case ModelType.disabledBets:
+        models = disabledBets;
+        modelString = "disabled-bets";
+        break;
+      case ModelType.disabledNumbers:
+        models = disabledNumbers;
+        modelString = "disabled-numbers";
+        break;
+      case ModelType.app:
+        modelString = "app";
+        break;
+    }
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
-      padlock = await modelsApi.postModel(model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
-      padlocks.add(padlock);
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
+      model = await modelsApi.getModel(id: model.id);
     }catch (e){
-      await updateUserStatus(e);
-      print("createPadlock $e");
+      print("fallo todo $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
-  }
-  Future<void> removePadlock({required Padlock model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
-      await modelsApi.deleteModel(id:model.id) ;
-    }catch (e){
-      await updateUserStatus(e);
-      print("removePadlock $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> updatePadlock({required Padlock model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      print(this.padlock.toUpdateMap());
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "padlocks",modelType: ModelType.padlock);
-      this.padlock = await modelsApi.putModel(id: model.id, model: model,modelsFr: [user], modelTypeFr: ModelType.user) as Padlock;
-      print(this.padlock.toUpdateMap());
-    }catch (e){
-      updateUserStatus(e);
-      print("updatePadlock $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
+    return model;
   }
 
-  Future<void> getApp() async {
+  Future<Model> updateModel({required ModelType modelType, required Model model}) async {
+    String modelString = "users";
+    List<Model> models = users;
+    switch(modelType){
+      case ModelType.user:
+        models = users;
+        modelString = "users";
+        break;
+      case ModelType.padlock:
+        models = padlocks;
+        modelString = "padlocks";
+        break;
+      case ModelType.month:
+        models = months;
+        modelString = "months";
+        break;
+      case ModelType.collector:
+        models = collectors;
+        modelString = "collectors";
+        break;
+      case ModelType.play:
+        models = plays;
+        modelString = "plays";
+        break;
+      case ModelType.disabledBets:
+        models = disabledBets;
+        modelString = "disabled-bets";
+        break;
+      case ModelType.disabledNumbers:
+        models = disabledNumbers;
+        modelString = "disabled-numbers";
+        break;
+      case ModelType.app:
+        modelString = "app";
+        break;
+    }
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",modelType: ModelType.app);
-      app = await modelsApi.getModel(id:1) as App;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
+      model = await modelsApi.putModel(model: model);
     }catch (e){
-      print("getApp $e");
+      print("fallo todo $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
+    return model;
   }
-  Future<void> updateApp() async {
+
+  Future<Model> createModel({ required ModelType modelType,required Model model}) async {
+    String modelString = "users";
+    List<Model> models = users;
+    switch(modelType){
+      case ModelType.user:
+        models = users;
+        modelString = "users";
+        break;
+      case ModelType.padlock:
+        models = padlocks;
+        modelString = "padlocks";
+        break;
+      case ModelType.month:
+        models = months;
+        modelString = "months";
+        break;
+      case ModelType.collector:
+        models = collectors;
+        modelString = "collectors";
+        break;
+      case ModelType.play:
+        models = plays;
+        modelString = "plays";
+        break;
+      case ModelType.disabledBets:
+        models = disabledBets;
+        modelString = "disabled-bets";
+        break;
+      case ModelType.disabledNumbers:
+        models = disabledNumbers;
+        modelString = "disabled-numbers";
+        break;
+      case ModelType.app:
+        break;
+    }
     status = ModelsStatus.updating;
     notifyListeners();
     try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "app",modelType: ModelType.app);
-      app = await modelsApi.putModel(id:1,model: app) as App;
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
+      model = await modelsApi.postModel(model: model);
+      models.add(model);
     }catch (e){
-      print("updateApp $e");
+      print("fallo todo $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
+    return model;
+  }
+
+  Future<void> removeModel({ required ModelType modelType, required Model model}) async {
+    String modelString = "users";
+    List<Model> models = users;
+    switch(modelType){
+      case ModelType.user:
+        models = users;
+        modelString = "users";
+        break;
+      case ModelType.padlock:
+        models = padlocks;
+        modelString = "padlocks";
+        break;
+      case ModelType.month:
+        models = months;
+        modelString = "months";
+        break;
+      case ModelType.collector:
+        models = collectors;
+        modelString = "collectors";
+        break;
+      case ModelType.play:
+        models = plays;
+        modelString = "plays";
+        break;
+      case ModelType.disabledBets:
+        models = disabledBets;
+        modelString = "disabled-bets";
+        break;
+      case ModelType.disabledNumbers:
+        models = disabledNumbers;
+        modelString = "disabled-numbers";
+        break;
+      case ModelType.app:
+        break;
+    }
+    status = ModelsStatus.updating;
+    notifyListeners();
+    try{
+      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: modelString,modelType: modelType);
+      await modelsApi.deleteModel(id: model.id);
+      models.remove(model);
+    }catch (e){
+      print("fallo todo $e");
+    }
+
+    status = ModelsStatus.updated;
+    notifyListeners();
+
   }
 
   Future<void> fetchUser() async {
@@ -330,194 +403,10 @@ class ModelsManager with ChangeNotifier {
       user.token = token;
       user.userStatus = UserStatus.authenticated;
     }catch (e) {
-      await updateUserStatus(e);
+      //await updateUserStatus(e);
       print("fetchUser $e");
     }
     status = ModelsStatus.updated;
     notifyListeners();
-  }
-
-  Future<void> updateDisabledNumbers() async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",modelType: ModelType.disabledNumbers);
-      fetchedModels = await modelsApi.getModels();
-      disabledNumbers = [];
-      for (var model in fetchedModels.models){
-        disabledNumbers.add(model as DisabledNumbers);
-      }
-    }catch (e){
-      disabledNumbers = [];
-      await updateUserStatus(e);
-      print("updateDisabledNumbers $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> updateDisabledNumber({required DisabledNumbers model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-numbers",modelType: ModelType.disabledNumbers);
-      disabledNumbers[model.id - 1] = await modelsApi.putModel(id:model.id,model: model) as DisabledNumbers;
-    }catch (e){
-      await updateUserStatus(e);
-      print("updateDisabledNumber $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-
-  Future<void> updateDisabledBets() async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",modelType: ModelType.disabledBets);
-      fetchedModels = await modelsApi.getModels();
-      disabledBets = [];
-      for (var model in fetchedModels.models){
-        disabledBets.add(model as DisabledBets);
-      }
-    }catch (e){
-      disabledBets = [];
-      await updateUserStatus(e);
-      print("updateDisabledBets $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> updateDisabledBet({required DisabledBets model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "disabled-bets",modelType: ModelType.disabledBets);
-      disabledBets[model.id - 1] = await modelsApi.putModel(id:model.id,model: model) as DisabledBets;
-    }catch (e){
-      await updateUserStatus(e);
-      print("updateDisabledBet $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-
-
-  Future<ModelOptions> updateCollectors({Filter? filter, bool loadMore = false, int page = 1}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    FetchedModels fetchedModels = FetchedModels(models: [], hasMore: false);
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      fetchedModels = await modelsApi.getModels(filter: filter, page: page,modelsFr: users, modelTypeFr: ModelType.user);
-      if (loadMore){
-        for (var model in fetchedModels.models){
-          collectors.add(model as Collector);
-        }
-      }else {
-        collectors = [];
-        for (var model in fetchedModels.models){
-          collectors.add(model as Collector);
-        }
-      }
-      for (var collector in collectors){
-        if (collector.user.id == user.id){
-          user.isCollector = true;
-          selectedCollector = collector;
-        }
-        collector.user.isCollector = true;
-      }
-    }catch (e){
-      collectors = [];
-      await updateUserStatus(e);
-      print("updateCollectors $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-    return ModelOptions(hasMore: fetchedModels.hasMore, page: page);
-  }
-  Future<void> updateCollector({required Collector model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      selectedCollector = await modelsApi.putModel(id: model.id, model: model,modelsFr: users, modelTypeFr: ModelType.user) as Collector;
-    }catch (e){
-      await updateUserStatus(e);
-      print("updateCollector $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> createCollector({required Collector model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      selectedCollector = await modelsApi.postModel(model: model,modelsFr: users, modelTypeFr: ModelType.user) as Collector;
-
-    }catch (e){
-      await updateUserStatus(e);
-      print("createCollector $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-  Future<void> removeCollector({required Collector model}) async {
-    status = ModelsStatus.updating;
-    notifyListeners();
-    try{
-      ModelsApi modelsApi = ModelsApi(token: user.token, modelString: "collectors",modelType: ModelType.collector);
-      await modelsApi.deleteModel(id: model.id);
-    }catch (e){
-      await updateUserStatus(e);
-      print("removeCollector $e");
-    }
-    status = ModelsStatus.updated;
-    notifyListeners();
-  }
-
-  void selectUser(User user){
-    selectedUser = user;
-  }
-  void selectCollector(Collector collector){
-    selectedCollector = collector;
-  }
-
-  Future<bool> isAppActive() async {
-    await getApp();
-    return app.active;
-  }
-
-  Future<bool> isUserActive() async {
-    await fetchUser();
-    return user.isActive;
-  }
-
-  Future<bool> isUserPlaying() async {
-    await updatePadlocks(filter: PadlockFilter(users: [user.id]));
-    print("user ${user.id}");
-    for (var padlock in padlocks){
-
-      if (padlock.playing && padlock.user.id == user.id){
-        print("padlock: ${padlock.id}");
-        this.padlock = padlock;
-        return true;
-      }
-    }
-    return false;
-  }
-
-  Future<void> updateUserStatus(Object e) async {
-    if (user.userStatus == UserStatus.authenticated) {
-      if (e == Exceptions.forbidden) {
-        if (!(user.isStaff || user.isSuperuser)) {
-          user.userStatus = UserStatus.appNotActive;
-        }
-      } else if (e == Exceptions.unauthorized) {
-        user.userStatus = UserStatus.unauthorized;
-      }
-    }
   }
 }

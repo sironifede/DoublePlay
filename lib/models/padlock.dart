@@ -8,6 +8,7 @@ class Padlock extends Model{
   bool playing = false;
   int month;
   int moneyGenerated;
+  bool selled;
   bool listerMoneyCollected;
   bool collectorMoneyCollected;
   String name;
@@ -21,6 +22,7 @@ class Padlock extends Model{
     required this.playing,
     required this.month,
     required this.moneyGenerated,
+    required this.selled,
     required this.listerMoneyCollected,
     required this.collectorMoneyCollected,
     required this.name,
@@ -35,6 +37,7 @@ class Padlock extends Model{
       "id": id.toString(),
       "playing": playing.toString(),
       "month": month.toString(),
+      "selled": selled.toString(),
       "lister_money_collected": listerMoneyCollected.toString(),
       "collector_money_collected": collectorMoneyCollected.toString(),
       "name": name.toString(),
@@ -47,6 +50,7 @@ class Padlock extends Model{
     return {
       "playing": playing.toString(),
       "month": month.toString(),
+      "selled": selled.toString(),
       "lister_money_collected": listerMoneyCollected.toString(),
       "collector_money_collected": collectorMoneyCollected.toString(),
       "name": name.toString(),
@@ -67,6 +71,7 @@ class Padlock extends Model{
       playing: data["playing"],
       month: data["month"],
       moneyGenerated: data["money_generated"],
+      selled: data["selled"],
       listerMoneyCollected: data["lister_money_collected"],
       collectorMoneyCollected: data["collector_money_collected"],
       name: data["name"],

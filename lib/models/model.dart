@@ -2,6 +2,7 @@
 
 import 'package:bolita_cubana/models/models.dart';
 import 'package:bolita_cubana/views/views.dart';
+import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 
 enum ModelType{

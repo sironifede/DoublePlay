@@ -63,8 +63,8 @@ class Play extends Model{
   }
 
   factory Play.fromMap(Map<String, dynamic> data){
-    PlayType play = PlayType.values[data["type"]];;
-    /*
+    PlayType play = PlayType.JS;
+
     if (data["type"] == "JSA") {
       play = PlayType.JSA;
     } else if (data["type"] == "JD") {
@@ -72,7 +72,7 @@ class Play extends Model{
     } else if (data["type"] == "JDA") {
       play = PlayType.JDA;
     }
-    */
+
     String date = (data["created_at"] == null) ? "" : data["created_at"];
     DateTime? createdAt = (data["created_at"] == null) ? null : DateTime.utc(
         int.parse(date.split("-")[0]), int.parse(date.split("-")[1]),
