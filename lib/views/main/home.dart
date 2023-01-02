@@ -282,7 +282,8 @@ class _HomePageState extends State<HomePage> {
               Navigator.of(context).pushNamed(Routes.disabledBets);
             },
             text: "Agregar/Remover apuestas",
-            backgroundImage: "assets/images/numbers.jpg",
+            backgroundImage: "assets/images/bet.png",
+
           )
       );
 
@@ -319,7 +320,7 @@ class _HomePageState extends State<HomePage> {
               Navigator.of(context).pushNamed(Routes.moneyGenerated);
             },
             text: "Dinero generado",
-            backgroundImage: "assets/images/calendar.png",
+            backgroundImage: "assets/images/stonks.png",
           )
       );
       list.add(

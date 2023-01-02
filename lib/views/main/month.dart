@@ -152,50 +152,55 @@ class _MonthPageState extends State<MonthPage> {
       "Noviembre",
       "Diciembre"
     ];
+    DateTime now = DateTime.now();
     list.add(
       ListView.builder(
         shrinkWrap: true,
         itemCount: 3,
         itemBuilder: (context, index) {
-          DateTime now = DateTime.now();
           index += now.month -1;
           if (now.month - 1 > 8) {
             if (index > 11) {
               index -= 12;
             }
           }
-
-          return Center(
-            child: ElevatedButton(
-              child: Text("${months[index]}"),
-              onPressed: (mm.months[index].enabled)? () async {
-                mm.newPlay = true;
-                mm.selectedPadlock = Padlock(
-                  user: mm.user.id,
-                  playing: true,
-                  month: index + 1,
-                  moneyGenerated: 0,
-                  selled: false,
-                  listerMoneyCollected: false,
-                  collectorMoneyCollected: false,
-                  name: "",
-                  phone: ""
-                );
-                print(mm.selectedPadlock!.toUpdateMap());
-                mm.selectedPlay = Play(
-                  id: 0,
-                  padlock: 0,
-                  bet: 5,
-                  confirmed: false,
-                  dayNumber: 1,
-                  nightNumber: 1,
-                  nRandom: 0,
-                  type: PlayType.JS
-                );
-                Navigator.of(context).pushNamed(Routes.play);
-              }:null,
-            ),
-          );
+          Widget button = Center();
+          for (var month in mm.months){
+            if (month.id == index  + 1  ){
+              button = Center(
+                child: ElevatedButton(
+                  child: Text("${months[index]}"),
+                  onPressed: (mm.months[index].enabled)? () async {
+                    mm.newPlay = true;
+                    mm.selectedPadlock = Padlock(
+                        user: mm.user.id,
+                        playing: true,
+                        month: index + 1,
+                        moneyGenerated: 0,
+                        selled: false,
+                        listerMoneyCollected: false,
+                        collectorMoneyCollected: false,
+                        name: "",
+                        phone: ""
+                    );
+                    print(mm.selectedPadlock!.toUpdateMap());
+                    mm.selectedPlay = Play(
+                        id: 0,
+                        padlock: 0,
+                        bet: 5,
+                        confirmed: false,
+                        dayNumber: 1,
+                        nightNumber: 1,
+                        nRandom: 0,
+                        type: PlayType.JS
+                    );
+                    Navigator.of(context).pushNamed(Routes.play);
+                  }:null,
+                ),
+              );
+            }
+          }
+          return button;
         },
       ),
     );

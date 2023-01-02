@@ -42,13 +42,6 @@ class _CustomScaffoldState extends State<CustomScaffold> {
                 color: Colors.blue,
               ),
               child: ListTile(
-                leading: IconButton(
-                  icon: Icon(Icons.arrow_back_outlined),
-                  onPressed: (){
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pop();
-                  },
-                ),
                 title: Text("Bienvenido a DoublePlay"),
                 subtitle: Text("Hola de nuevo ${mm.user.username}!")
               ),

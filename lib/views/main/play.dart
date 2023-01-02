@@ -776,7 +776,7 @@ class CustomTextButton extends StatelessWidget {
           Text(
             "$label",
             style: TextStyle(
-              fontSize: 16.0,
+              fontSize: 12.0,
               color: textColor ?? (enabled??true
                   ? Colors.white
                   : Colors.white54),
