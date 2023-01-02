@@ -170,7 +170,7 @@ class _MonthPageState extends State<MonthPage> {
               button = Center(
                 child: ElevatedButton(
                   child: Text("${months[index]}"),
-                  onPressed: (mm.months[index].enabled)? () async {
+                  onPressed: (month.enabled)? () async {
                     mm.newPlay = true;
                     mm.selectedPadlock = Padlock(
                         user: mm.user.id,
