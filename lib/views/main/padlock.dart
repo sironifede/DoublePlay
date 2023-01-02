@@ -47,7 +47,7 @@ class _PadlockPageState extends State<PadlockPage> {
       });
     }
     loading = (mm.status == ModelsStatus.updating);
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text("Candados"),
       ),

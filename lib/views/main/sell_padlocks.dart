@@ -38,7 +38,7 @@ class _SellPadlocksPageState extends State<SellPadlocksPage> {
     loading = (mm.status == ModelsStatus.updating );
     return DefaultTabController(
       length: 2,
-      child: CustomScaffold(
+      child: Scaffold(
         appBar: AppBar(
           actions: [
             DropdownButton<String>(

@@ -32,7 +32,7 @@ class _UserPageState extends State<UserPage> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text("Usuario"),
         ),
@@ -80,7 +80,7 @@ class _UserPageState extends State<UserPage> {
           )
       );
     }
-    if (mm.user.isSuperuser || (mm.user.isStaff && !mm.selectedUser!.isStaff && !mm.selectedUser!.isSuperuser) || (mm.user.id == mm.selectedUser!.id)) {
+    if (mm.user.isSuperuser || (mm.user.isStaff && !mm.selectedUser!.isStaff && !mm.selectedUser!.isSuperuser) || (mm.user.id == mm.selectedUser!.id && (mm.user.isSuperuser || mm.user.isStaff))) {
       list.add(
         Padding(
           padding: const EdgeInsets.all(8.0),

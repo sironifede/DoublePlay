@@ -47,7 +47,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
 
     return DefaultTabController(
       length: 2,
-      child: CustomScaffold(
+      child: Scaffold(
         appBar: AppBar(
           actions: [
             DropdownButton<String>(

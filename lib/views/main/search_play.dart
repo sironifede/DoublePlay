@@ -73,7 +73,7 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
 
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text("Buscar jugada"),
         ),

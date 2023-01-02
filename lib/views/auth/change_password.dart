@@ -47,7 +47,7 @@ class _ChangeUserPasswordPageState extends State<ChangeUserPasswordPage> {
     }
 
     // Constructor de la ventana Login
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text("Cambiar contraseña"),
         ),

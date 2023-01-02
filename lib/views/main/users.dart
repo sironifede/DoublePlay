@@ -119,7 +119,7 @@ class _UsersPageState extends State<UsersPage> {
       }
     }
 
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text("Administrar usuarios"),
         actions: <Widget>[

@@ -62,7 +62,7 @@ class _HelpPageState extends State<HelpPage> {
         elements.add(HelpElement(help: help));
       }
     }
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text("Ayuda"),
           actions: <Widget>[

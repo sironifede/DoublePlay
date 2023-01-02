@@ -113,7 +113,7 @@ class _MonthPageState extends State<MonthPage> {
       hasError = false;
 
     }
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text("Elegir mes"),
         ),
@@ -173,7 +173,7 @@ class _MonthPageState extends State<MonthPage> {
                 mm.selectedPadlock = Padlock(
                   user: mm.user.id,
                   playing: true,
-                  month: mm.months[index].id,
+                  month: index + 1,
                   moneyGenerated: 0,
                   selled: false,
                   listerMoneyCollected: false,
@@ -181,6 +181,7 @@ class _MonthPageState extends State<MonthPage> {
                   name: "",
                   phone: ""
                 );
+                print(mm.selectedPadlock!.toUpdateMap());
                 mm.selectedPlay = Play(
                   id: 0,
                   padlock: 0,

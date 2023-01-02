@@ -31,7 +31,7 @@ class _AppPageState extends State<AppPage> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text("Estado de la app"),
         ),

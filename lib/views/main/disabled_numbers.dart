@@ -57,7 +57,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
 
     return DefaultTabController(
       length: 2,
-      child: CustomScaffold(
+      child: Scaffold(
           appBar: AppBar(
             actions: [
               DropdownButton<String>(
@@ -85,7 +85,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                 }).toList(),
               ),
             ],
-            title: const Text("Numeros dehabilitados"),
+            title: const Text("Números dehabilitados"),
             bottom: TabBar(
               tabs: [
                 Tab(icon: Center(child: Image.asset('assets/images/sun.png')),),
@@ -118,7 +118,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
     } else {
       list.add(
           ListTile(
-              title: Text("numeros dehabilitados")
+              title: Text("números dehabilitados")
           )
       );
       list.add(
@@ -128,8 +128,8 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
             enabled: !loading,
             controller: _nightController,
             decoration: InputDecoration(
-                labelText: "Añadir numero",
-                hintText: "Para añadir numero",
+                labelText: "Añadir número",
+                hintText: "Para añadir número",
                 suffixIcon: IconButton(
                   icon: Icon(Icons.add),
                   onPressed: () {
@@ -143,10 +143,9 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                         }else{
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                                content: Text("No se puede dehabilitar ese numero")),
+                                content: Text("No se puede agregar ese número")),
                           );
                         }
-
                       }
                     } catch (e) {}
                   },
@@ -194,7 +193,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
         list.add(
             ListTile(
                 leading: Icon(Icons.warning),
-                title: Text("Todavia no se deshabiltaron numeros")
+                title: Text("Todavia no se deshabiltaron números")
             )
         );
       }
@@ -208,11 +207,15 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                     onPressed: () {
-                      mm.disabledNumbers[month + 1].nightNumbers = nightNumbers;
-                       mm.updateModel(modelType: ModelType.disabledNumbers, model: mm.disabledNumbers[month]).then((
-                          value) {
-                        updateNumbers();
-                      });
+                      for (var disabledNumber in mm.disabledNumbers){
+                        if (disabledNumber.month == month + 1){
+                          disabledNumber.nightNumbers = nightNumbers;
+                          mm.updateModel(modelType: ModelType.disabledNumbers,model: disabledNumber).then((value) {
+                            updateNumbers();
+                          });
+                          break;
+                        }
+                      }
                     },
                     child: Text("GUARDAR")
                 ),
@@ -230,7 +233,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
     }else {
       list.add(
           ListTile(
-              title: Text("numeros dehabilitados")
+              title: Text("Números dehabilitados")
           )
       );
       list.add(
@@ -240,8 +243,8 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
               enabled: !loading,
               controller: _dayController,
               decoration: InputDecoration(
-                  labelText: "Añadir numero",
-                  hintText: "Para añadir numero",
+                  labelText: "Añadir número",
+                  hintText: "Para añadir número",
                   suffixIcon:  IconButton(
                     icon: Icon( Icons.add),
                     onPressed: (){
@@ -255,7 +258,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                           }else{
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
-                                  content: Text("No se puede dehabilitar ese numero")),
+                                  content: Text("No se puede afregar ese número")),
                             );
                           }
                         }
@@ -307,7 +310,7 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
         list.add(
             ListTile(
               leading: Icon(Icons.warning),
-              title: Text("Todavia no se deshabiltaron numeros")
+              title: Text("Todavia no se deshabiltaron números")
             )
         );
       }
@@ -321,10 +324,17 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
                 padding: const EdgeInsets.all(8.0),
                 child: ElevatedButton(
                     onPressed: (){
-                      mm.disabledNumbers[month  + 1].dayNumbers = dayNumbers;
-                      mm.updateModel(modelType: ModelType.disabledNumbers,model: mm.disabledNumbers[month]).then((value) {
-                        updateNumbers();
-                      });
+                      for (var disabledNumber in mm.disabledNumbers){
+                        if (disabledNumber.month == month + 1){
+                          disabledNumber.dayNumbers = dayNumbers;
+                          mm.updateModel(modelType: ModelType.disabledNumbers,model: disabledNumber).then((value) {
+                            updateNumbers();
+                          });
+                          break;
+                        }
+
+                      }
+
                     },
                     child: Text("GUARDAR")
                 ),

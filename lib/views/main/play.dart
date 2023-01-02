@@ -306,7 +306,7 @@ class _PlayPageState extends State<PlayPage> {
     }
 
 
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: Icon(Icons.arrow_back_outlined),
@@ -340,7 +340,7 @@ class _PlayPageState extends State<PlayPage> {
           InkWell(child: Image.asset(
             'assets/gifs/dice_rolling.gif', height: 60, width: 60,color: Colors.red,colorBlendMode: BlendMode.modulate),
             onTap:(){
-              if (mm.selectedPlay!.nRandom >= 3) {
+              if (mm.selectedPlay!.nRandom >= 3 || loading || !mm.selectedPadlock!.playing) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text("No puedes realizar mas jugadas aleatorias.")),

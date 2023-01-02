@@ -119,7 +119,7 @@ class _CollectorsPageState extends State<CollectorsPage> {
       }
     }
 
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text("Administrar colectores"),
         actions: <Widget>[

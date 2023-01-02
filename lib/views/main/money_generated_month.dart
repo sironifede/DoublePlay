@@ -33,9 +33,12 @@ class _MoneyGeneratedInMonthPageState extends State<MoneyGeneratedInMonthPage> {
       startDate = DateTime(year, month + 1, 1, 0, 0);
       int sum = 0;
       int mon = month + 1;
-      if (month == 11){
+      if (month == 11 ){
         sum = 1;
         mon = 1;
+      }
+      if (month == 0){
+        mon = 2;
       }
       endDate = DateTime(year + sum, mon, 0, 23, 59);
       padlockFilter.creAtLt.value = startDate.toString();
@@ -74,7 +77,7 @@ class _MoneyGeneratedInMonthPageState extends State<MoneyGeneratedInMonthPage> {
     loading = (mm.status == ModelsStatus.updating );
     return DefaultTabController(
       length: 2,
-      child: CustomScaffold(
+      child: Scaffold(
           appBar: AppBar(
             actions: [
               DropdownButton<int>(
@@ -85,9 +88,12 @@ class _MoneyGeneratedInMonthPageState extends State<MoneyGeneratedInMonthPage> {
                     startDate = DateTime(year, month + 1, 1, 0, 0);
                     int sum = 0;
                     int mon = month + 1;
-                    if (month == 11){
+                    if (month == 11 ){
                       sum = 1;
                       mon = 1;
+                    }
+                    if (month == 0){
+                      mon = 2;
                     }
                     endDate = DateTime(year + sum, mon, 0, 23, 59);
                     padlockFilter.creAtLt.value = startDate.toString();

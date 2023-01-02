@@ -55,7 +55,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
   @override
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: const Text("Ticket"),
       ),

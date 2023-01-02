@@ -36,7 +36,7 @@ class _EnabledMonthsPageState extends State<EnabledMonthsPage> {
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating );
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text("Meses habilitados"),
       ),
@@ -55,19 +55,24 @@ class _EnabledMonthsPageState extends State<EnabledMonthsPage> {
   }
   List<Widget> generateColumn(){
     List<Widget> list = [];
-
-    for (var month in mm.months){
-      list.add(
-          CheckboxListTile(
-              title: Text('${months[month.id - 1]}'),
-              onChanged: (e) {
-                month.enabled= !month.enabled;
-                mm.updateModel(modelType: ModelType.month,model: month);
-              },
-              value: month.enabled
-          )
-      );
+    for (var i = 0;i < 12;i++){
+      for (var month in mm.months){
+        if (month.id == i + 1) {
+          list.add(
+              CheckboxListTile(
+                  title: Text('${months[month.id - 1]}'),
+                  onChanged: (e) {
+                    month.enabled = !month.enabled;
+                    mm.updateModel(modelType: ModelType.month, model: month);
+                  },
+                  value: month.enabled
+              )
+          );
+          break;
+        }
+      }
     }
+
     return list;
   }
 }

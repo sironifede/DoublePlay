@@ -188,7 +188,7 @@ class _PlaysPageState extends State<PlaysPage> {
       }
     }
 
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: const Text("Jugadas"),
           actions: <Widget>[
@@ -303,7 +303,7 @@ class _PlaysPageState extends State<PlaysPage> {
                   bool? result = await showDialog(context: context, builder: (_){
                     return AlertDialog(
                       title: const Text("¿Eliminar los usuarios seleccionados?"),
-                      content: const Text("¿Estás seguro de que quieres eliminar los usuarios seleccionados?, no podra recuperarlos"),
+                      content: const Text("¿Estás seguro de que quieres eliminar las jugadas seleccionados?, no podra recuperarlas"),
                       actions: [
                         TextButton(
                           child:const Text("CANCELAR"),

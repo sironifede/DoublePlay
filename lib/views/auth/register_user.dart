@@ -62,7 +62,7 @@ class _RegisterUserPageState extends State<RegisterUserPage> {
     }
 
     // Constructor de la ventana Login
-    return CustomScaffold(
+    return Scaffold(
         appBar: AppBar(
           title: Text("Añadir usuario"),
         ),

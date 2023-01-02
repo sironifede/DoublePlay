@@ -80,7 +80,7 @@ class _CollectorPageState extends State<CollectorPage> {
   Widget build(BuildContext context) {
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
-    return CustomScaffold(
+    return Scaffold(
       appBar: AppBar(
         title: Text("Colector"),
       ),
@@ -326,6 +326,13 @@ class _CollectorPageState extends State<CollectorPage> {
           )
       );
     }
+    list.add(const Divider());
+    list.add(
+        ListTile(
+            leading:const Icon(Icons.info_outline),
+            subtitle: Text("-Si no te aparece el dinero no recolectado es porque primero el colector debe recolectar su dinero."),
+        )
+    );
 
     return list;
   }
