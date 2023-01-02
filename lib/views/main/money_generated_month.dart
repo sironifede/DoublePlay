@@ -201,7 +201,7 @@ class _MoneyGeneratedInMonthPageState extends State<MoneyGeneratedInMonthPage> {
                               ? "listero"
                               : "listeros"}\nColector creado: ${(user.dateJoined == null)
                               ? "No se sabe"
-                              : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
+                              : DateFormat('yyyy-MMMM-dd hh:mm a').format(user.dateJoined!.toLocal())}"),
                     ),
                     children: users
                 ),
@@ -281,7 +281,7 @@ class _MoneyGeneratedInMonthPageState extends State<MoneyGeneratedInMonthPage> {
                                 ? "listero"
                                 : "listeros"}\nColector creado: ${(user.dateJoined == null)
                                 ? "No se sabe"
-                                : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
+                                : DateFormat('yyyy-MMMM-dd hh:mm a').format(user.dateJoined!.toLocal())}"),
                       ),
                       children: users
                   ),

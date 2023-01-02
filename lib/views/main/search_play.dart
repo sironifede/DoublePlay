@@ -24,7 +24,20 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
 
   TextEditingController _dayNumberController = TextEditingController();
   TextEditingController _nightNumberController = TextEditingController();
-
+  List<String> months = [
+    "Enero",
+    "Febrero",
+    "Marzo",
+    "Abril",
+    "Mayo",
+    "Junio",
+    "Julio",
+    "Agosto",
+    "Septiembre",
+    "Octubre",
+    "Noviembre",
+    "Diciembre"
+  ];
 
   @override
   initState() {
@@ -202,7 +215,7 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
                                   crossAxisAlignment:CrossAxisAlignment.start,
                                   children: [
                                     ListTile(
-                                      title: Text("Para el mes: ${padlock.month}"),
+                                      title: Text("Para el mes: ${months[padlock.month-1]}"),
                                       subtitle: Text("Tipo de jugada: ${play.type?.name}"),
                                       trailing: Text("#${padlock.id.toString().padLeft(8, '0')}"),
                                     ),
@@ -255,7 +268,7 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
                                     ),
                                     Padding(
                                       padding: const EdgeInsets.all(8.0),
-                                      child:  Text("Realizada: ${(play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(play.createdAt!.toLocal())}"),
+                                      child:  Text("Realizada: ${(play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(play.createdAt!.toLocal())}"),
                                     )
 
                                   ],
@@ -286,25 +299,29 @@ class _SearchPlayPageState extends State<SearchPlayPage> {
 
           }
         }
-        for (var user in mm.users) {
-          if (collector.user == user.id) {
-            list.add(
-                Card(
-                  child: ExpansionTile(
-                      title: ListTile(
-                        title: Text("${user.username}"),
-                        subtitle: Text("Id: ${collector.id}\n${collector.listers
-                            .length} ${(collector.listers.length == 1)
-                            ? "listero"
-                            : "listeros"} \nColector creado: ${(user
-                            .dateJoined == null)
-                            ? "No se sabe"
-                            : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
-                      ),
-                      children: users
-                  ),
-                )
-            );
+        if (users.length > 1) {
+          for (var user in mm.users) {
+            if (collector.user == user.id) {
+              list.add(
+                  Card(
+                    child: ExpansionTile(
+                        title: ListTile(
+                          title: Text("${user.username}"),
+                          subtitle: Text(
+                              "Id: ${collector.id}\n${collector.listers
+                                  .length} ${(collector.listers.length == 1)
+                                  ? "listero"
+                                  : "listeros"} \nColector creado: ${(user
+                                  .dateJoined == null)
+                                  ? "No se sabe"
+                                  : DateFormat('yyyy-MMMM-dd hh:mm a').format(
+                                  user.dateJoined!.toLocal())}"),
+                        ),
+                        children: users
+                    ),
+                  )
+              );
+            }
           }
         }
 

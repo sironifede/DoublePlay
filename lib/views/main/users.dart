@@ -459,7 +459,7 @@ class UserWidget extends StatelessWidget {
       onLongPress: onLongPress,
       trailing:(element.deleting)? CircularProgressIndicator(): Icon(Icons.remove_red_eye),
       title: Text(element.user.username),
-      subtitle: (element.deleting)?Text("Eliminando usuario..."):Text("Id:${element.user.id}\n${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}\nCuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(element.user.dateJoined!.toLocal())}"),
+      subtitle: (element.deleting)?Text("Eliminando usuario..."):Text("Id:${element.user.id}\n${(element.user.isSuperuser)? "Superusuario": (element.user.isStaff)?"Admin": (element.user.isCollector)?"Colector":"Listero"}\nCuenta creada el: ${(element.user.dateJoined== null)?"No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.user.dateJoined!.toLocal())}"),
       onTap: onTap,
     );
   }

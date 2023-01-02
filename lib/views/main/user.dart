@@ -56,10 +56,10 @@ class _UserPageState extends State<UserPage> {
                     .isCollector) ? "Colector" : "Listero"}"),
                 Text("Cuenta creada el: ${(mm.selectedUser!.dateJoined == null)
                     ? "No se sabe"
-                    : DateFormat('yyyy-MMMM-dd HH:mm a').format(
+                    : DateFormat('yyyy-MMMM-dd hh:mm a').format(
                     mm.selectedUser!.dateJoined!.toLocal())}"),
                 Text("Ultimo inicio de sesion: ${(mm.selectedUser!.lastLogin ==
-                    null) ? "No se sabe" : DateFormat('yyyy-MMMM-dd HH:mm a')
+                    null) ? "No se sabe" : DateFormat('yyyy-MMMM-dd hh:mm a')
                     .format(mm.selectedUser!.lastLogin!.toLocal())}"),
               ]
           ),

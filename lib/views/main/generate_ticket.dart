@@ -125,7 +125,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
     }
     list.add(Text("CT#${(collector == null)? "no tiene": userCollector?.username} LT#${user?.username}",style: TextStyle(fontSize: 30,fontWeight: FontWeight.w800,color: Colors.black)));
     list.add(Text("MES:${months[mm.selectedPadlock!.month - 1]}",style: TextStyle(fontSize: 20, color: Colors.black),));
-    list.add(Text("${DateFormat('yyyy-MMMM-dd HH:mm a').format(mm.selectedPadlock!.updatedAt!.toLocal())}",style: TextStyle( color: Colors.black)));
+    list.add(Text("${DateFormat('yyyy-MMMM-dd hh:mm a').format(mm.selectedPadlock!.updatedAt!.toLocal())}",style: TextStyle( color: Colors.black)));
     list.add(
         SizedBox(
           height: 32,

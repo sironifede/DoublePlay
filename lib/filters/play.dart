@@ -11,7 +11,7 @@ class PlayFilter extends Filter {
       hintText: "Que tipo de jugada se hizo",
       fieldName: "type");
   TextFilterField month = TextFilterField(
-      labelText: "Mes", hintText: "Mes de la jugada", fieldName: "month");
+      labelText: "Mes", hintText: "Mes de la jugada", fieldName: "padlock__month");
 
   TextFilterField dayNumber = TextFilterField(labelText: "",
       hintText: "",

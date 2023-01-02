@@ -537,7 +537,7 @@ class CollectorWidget extends StatelessWidget {
         subtitle: (element.updating)? Text("Actualizando colector...") : (element.deleting)? Text("Eliminando colector..."):
         Text("Id: ${element.collector.id}\n${element.collector.listers.length} ${(element.collector.listers.length == 1)? "listero":"listeros"} \nColector creado: ${(element.user.dateJoined == null)
             ? "No se sabe"
-            : DateFormat('yyyy-MMMM-dd HH:mm a').format(element.user.dateJoined!.toLocal())}"),
+            : DateFormat('yyyy-MMMM-dd hh:mm a').format(element.user.dateJoined!.toLocal())}"),
         onTap: onTap,
       ),
       children: list

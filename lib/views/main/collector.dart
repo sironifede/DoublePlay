@@ -126,7 +126,7 @@ class _CollectorPageState extends State<CollectorPage> {
             },
           ),
           subtitle: Text("${DateFormat('yyyy-MMMM-dd HH:mm a').format(
-              startDate.toLocal())} \n${DateFormat('yyyy-MMMM-dd HH:mm a')
+              startDate.toLocal())} \n${DateFormat('yyyy-MMMM-dd hh:mm a')
               .format(endDate.toLocal())}"),
         )
     );
@@ -193,7 +193,7 @@ class _CollectorPageState extends State<CollectorPage> {
                             ? "listero"
                             : "listeros"}\nColector creado: ${(user.dateJoined == null)
                             ? "No se sabe"
-                            : DateFormat('yyyy-MMMM-dd HH:mm a').format(user.dateJoined!.toLocal())}"),
+                            : DateFormat('yyyy-MMMM-dd hh:mm a').format(user.dateJoined!.toLocal())}"),
                   ),
                   children: users
               ),

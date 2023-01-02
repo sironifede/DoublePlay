@@ -31,7 +31,6 @@ class _PlaysPageState extends State<PlaysPage> {
   bool selectingElements = true;
   List<PlayElement> elements = [];
 
-  List<String> months = <String>['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
   String month = '';
   List<String> playTypes = <String>['', 'JS', 'JSA', 'JD', 'JDA'];
   String playType = '';
@@ -96,6 +95,21 @@ class _PlaysPageState extends State<PlaysPage> {
 
   @override
   Widget build(BuildContext context) {
+    List<String> months = [
+      "",
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre"
+    ];
     mm = context.watch<ModelsManager>();
     loading = (mm.status == ModelsStatus.updating);
     if (!selectingElements){
@@ -265,7 +279,7 @@ class _PlaysPageState extends State<PlaysPage> {
                                           }
                                         },
                                       ),
-                                      subtitle: Text("${playFilter.creAtGt.value}\n${playFilter.creAtLt.value}"),
+                                      subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
                                     )
                                   ],
                                 ),
@@ -280,11 +294,18 @@ class _PlaysPageState extends State<PlaysPage> {
                                   TextButton(
                                       onPressed: () async {
                                         playFilter.month.value = month;
+                                        for (var i=1;i<13;i++){
+                                          if (months[i] == month){
+                                            playFilter.month.value = i.toString();
+                                          }
+                                        }
+
                                         playFilter.type.value = playType;
                                         playFilter.bet.value = _betController.text;
                                         playFilter.betGT.value = _betControllerGT.text;
                                         filtering = true;
                                         _refresh();
+                                        print(playFilter.getFilterStr());
                                         Navigator.of(context).pop();
                                       },
                                       child: const Text("FILTRAR")
@@ -411,7 +432,7 @@ class _PlaysPageState extends State<PlaysPage> {
           ListTile(
             leading: Text(""),
             title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${playFilter.creAtGt.value}\nHasta: ${playFilter.creAtLt.value}"),
+            subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
           )
       );
     }else{
@@ -419,7 +440,7 @@ class _PlaysPageState extends State<PlaysPage> {
           ListTile(
             leading: Text(""),
             title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${playFilter.creAtGt.value}\nHasta: ${playFilter.creAtLt.value}"),
+            subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
           )
       );
       list.add(
@@ -617,6 +638,7 @@ class _PlaysPageState extends State<PlaysPage> {
     return list;
   }
 }
+
 class PlayElement {
   final Play play;
   final Padlock padlock;
@@ -625,6 +647,7 @@ class PlayElement {
   PlayElement({required this.padlock, required this.play, this.selected = false});
 }
 class PlayWidget extends StatelessWidget {
+
   const PlayWidget({required this.element, required this.onTap, this.onLongPress, this.selectingElements = false, required this.index});
   final PlayElement element;
   final int index;
@@ -633,6 +656,20 @@ class PlayWidget extends StatelessWidget {
   final bool selectingElements;
   @override
   Widget build(BuildContext context){
+    List<String> months = [
+      "Enero",
+      "Febrero",
+      "Marzo",
+      "Abril",
+      "Mayo",
+      "Junio",
+      "Julio",
+      "Agosto",
+      "Septiembre",
+      "Octubre",
+      "Noviembre",
+      "Diciembre"
+    ];
     return Card(
       child: ListTile(
         selected: element.selected,
@@ -646,7 +683,7 @@ class PlayWidget extends StatelessWidget {
                 value: element.selected,
                 onChanged: (b){}
               ):null,
-              title: Text("Para el mes: ${element.padlock.month}"),
+              title: Text("Para el mes: ${months[element.padlock.month-1]}"),
               subtitle: Text("Tipo de jugada: ${element.play.type?.name}"),
               trailing: Text("#${element.padlock.id.toString().padLeft(8, '0')}"),
             ),
@@ -698,7 +735,7 @@ class PlayWidget extends StatelessWidget {
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd HH:mm a').format(element.play.createdAt!.toLocal())}"),
+              child:  Text("Realizada: ${(element.play.createdAt == null)? "No se sabe": DateFormat('yyyy-MMMM-dd hh:mm a').format(element.play.createdAt!.toLocal())}"),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
