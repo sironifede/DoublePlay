@@ -34,6 +34,14 @@ class _UserPageState extends State<UserPage> {
     mm = context.watch<ModelsManager>();
     return Scaffold(
         appBar: AppBar(
+          actions: <Widget>[
+            IconButton(
+              onPressed: (){
+                Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+              },
+              icon: Icon(Icons.home),
+            ),
+          ],
           title: const Text("Usuario"),
         ),
         body:ListView(

@@ -175,7 +175,7 @@ class _PlaysPageState extends State<PlaysPage> {
                   totalBet += play.bet;
                   break;
                 }
-              }else{
+              }else if (_padlockId.text == ""){
                 if (!selectingElements) {
                   elements.add(PlayElement(padlock: padlock, play: play));
                 }
@@ -202,6 +202,7 @@ class _PlaysPageState extends State<PlaysPage> {
       }
     }
 
+
     return Scaffold(
         appBar: AppBar(
           title: const Text("Jugadas"),
@@ -214,6 +215,14 @@ class _PlaysPageState extends State<PlaysPage> {
                       builder: (BuildContext context){
                         return StatefulBuilder(
                             builder: (context, StateSetter setState) {
+                              var from = "";
+                              var to = "";
+                              try{
+                                from = DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value));
+                                to = DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtLt.value));
+                              }catch(e){
+
+                              }
                               return AlertDialog(
                                 scrollable: true,
                                 title: const Text("Filtros"),
@@ -279,7 +288,7 @@ class _PlaysPageState extends State<PlaysPage> {
                                           }
                                         },
                                       ),
-                                      subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
+                                      subtitle: Text("Desde: ${from}\nHasta: ${to}"),
                                     )
                                   ],
                                 ),
@@ -428,21 +437,36 @@ class _PlaysPageState extends State<PlaysPage> {
             subtitle: Text('${elements.length}'),
           )
       );
-      list.add(
-          ListTile(
-            leading: Text(""),
-            title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
-          )
-      );
+      try {
+        list.add(
+            ListTile(
+              leading: Text(""),
+              title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
+              subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
+            )
+        );
+      }catch(e){
+
+      }
+
     }else{
-      list.add(
-          ListTile(
-            leading: Text(""),
-            title: Text("Dinero recaudado: \$$totalBet",style:const TextStyle( fontSize: 30)),
-            subtitle: Text("Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(DateTime.parse(playFilter.creAtGt.value))}\nHasta: ${DateFormat('yyyy-MMMM-dd hh:mm a').format(DateTime.parse(playFilter.creAtLt.value))}"),
-          )
-      );
+      try {
+        list.add(
+            ListTile(
+              leading: Text(""),
+              title: Text("Dinero recaudado: \$$totalBet",
+                  style: const TextStyle(fontSize: 30)),
+              subtitle: Text(
+                  "Desde: ${DateFormat('yyyy-MMMM-dd HH:mm a').format(
+                      DateTime.parse(
+                          playFilter.creAtGt.value))}\nHasta: ${DateFormat(
+                      'yyyy-MMMM-dd hh:mm a').format(
+                      DateTime.parse(playFilter.creAtLt.value))}"),
+            )
+        );
+      }catch(e){
+
+      }
       list.add(
           ListTile(
             leading: const Text(""),
@@ -472,18 +496,22 @@ class _PlaysPageState extends State<PlaysPage> {
                     playType = "";
                     filtering = true;
                     playFilter.type.value = "";
-                    playFilter.creAtLt.value = "";
-                    playFilter.creAtGt.value = "";
+                    if(_padlockId.text != "") {
+                      playFilter.creAtLt.value = "";
+                      playFilter.creAtGt.value = "";
+                    }
                     playFilter.month.value = "";
                     try{
                       int id = int.parse(_padlockId.text);
                       playFilter.padlock.values = [id];
+                      _refresh();
                     }catch(e){
-                      playFilter.padlock.values = [_padlockId.text];
+                      playFilter.padlock.values = [];
                     }
-                  });
+                    setState(() {
 
-                  _refresh();
+                    });
+                  });
 
                 },
               )

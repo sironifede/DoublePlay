@@ -274,11 +274,11 @@ class _PlayPageState extends State<PlayPage> {
     for (var i in mm.disabledNumbers) {
       if (i.month == mm.selectedPadlock!.month) {
         for (var number in i.dayNumbers){
-          print(number);
+
           dayNumbers.remove(number);
         }
         for (var number in i.nightNumbers){
-          print(number);
+
           nightNumbers.remove(number);
         }
         dayNumbers =

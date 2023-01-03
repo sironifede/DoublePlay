@@ -82,6 +82,14 @@ class _CollectorPageState extends State<CollectorPage> {
     loading = (mm.status == ModelsStatus.updating);
     return Scaffold(
       appBar: AppBar(
+          actions: <Widget>[
+            IconButton(
+              onPressed: (){
+                Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+              },
+              icon: Icon(Icons.home),
+            ),
+          ],
         title: Text("Colector"),
       ),
         body: RefreshIndicator(

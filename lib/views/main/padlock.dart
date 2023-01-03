@@ -50,6 +50,14 @@ class _PadlockPageState extends State<PadlockPage> {
     loading = (mm.status == ModelsStatus.updating);
     return Scaffold(
       appBar: AppBar(
+          actions: <Widget>[
+            IconButton(
+              onPressed: (){
+                Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+              },
+              icon: Icon(Icons.home),
+            ),
+          ],
         title: const Text("Candados"),
       ),
       body:RefreshIndicator(

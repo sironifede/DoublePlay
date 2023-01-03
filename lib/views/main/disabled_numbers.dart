@@ -60,6 +60,13 @@ class _DisabledNumbersPageState extends State<DisabledNumbersPage> {
       child: Scaffold(
           appBar: AppBar(
             actions: [
+              IconButton(
+                onPressed: (){
+                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+                },
+                icon: Icon(Icons.home),
+              ),
+
               DropdownButton<String>(
                 value: months[month],
                 onChanged: (String? value) async {

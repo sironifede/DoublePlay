@@ -64,6 +64,7 @@ class _HelpPageState extends State<HelpPage> {
     }
     return Scaffold(
         appBar: AppBar(
+
           title: Text("Ayuda"),
           actions: <Widget>[
             (selectingElements)?IconButton(

@@ -49,6 +49,7 @@ class _DisabledBetsPageState extends State<DisabledBetsPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+
           actions: [
             DropdownButton<String>(
               value: months[month],

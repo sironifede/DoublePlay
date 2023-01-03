@@ -40,6 +40,7 @@ class _ResetMonthsPageState extends State<ResetMonthsPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
+
           title: const Text("Resetear mes"),
         ),
         body:RefreshIndicator(

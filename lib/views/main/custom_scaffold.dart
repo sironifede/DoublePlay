@@ -66,14 +66,6 @@ class _CustomScaffoldState extends State<CustomScaffold> {
             ),
             Divider(),
             ListTile(
-              title: Text('Inicio'),
-              trailing: Icon(Icons.house),
-              onTap: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (Route<dynamic> route) => false);
-              },
-            ),
-            Divider(),
-            ListTile(
               title: Text('CERRAR SESION'),
               trailing: Icon(Icons.logout),
               onTap: () {

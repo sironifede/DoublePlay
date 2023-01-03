@@ -8,6 +8,7 @@ import 'package:bolita_cubana/views/main/custom_scaffold.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/models_manager.dart';
+import '../../routes/route_generator.dart';
 
 class ChangeUserPasswordPage extends StatefulWidget {
   const ChangeUserPasswordPage({Key? key}) : super(key: key);
@@ -49,7 +50,15 @@ class _ChangeUserPasswordPageState extends State<ChangeUserPasswordPage> {
     // Constructor de la ventana Login
     return Scaffold(
         appBar: AppBar(
-          title: Text("Cambiar contraseña"),
+            title: Text("Cambiar contraseña"),
+            actions: <Widget>[
+              IconButton(
+                onPressed: (){
+                  Navigator.of(context).pushNamedAndRemoveUntil(Routes.home, (route) => false);
+                },
+                icon: Icon(Icons.home),
+              ),
+            ]
         ),
         body:SingleChildScrollView(
           // Al colocarla dentro se evita problemas con la vista en caso de que se gire la pantalla
