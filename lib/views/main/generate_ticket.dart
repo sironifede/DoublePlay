@@ -206,7 +206,7 @@ class _GenerateTicketState extends State<GenerateTicket> {
     list.add(
         Row(
           children: [
-            Text("Info Opcional",style: TextStyle(fontSize: 20, color: Colors.black)),
+            Text("Info",style: TextStyle(fontSize: 20, color: Colors.black)),
           ],
         )
     );

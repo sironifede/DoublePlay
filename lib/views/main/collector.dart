@@ -326,13 +326,16 @@ class _CollectorPageState extends State<CollectorPage> {
           )
       );
     }
-    list.add(const Divider());
-    list.add(
-        ListTile(
-            leading:const Icon(Icons.info_outline),
-            subtitle: Text("-Si no te aparece el dinero no recolectado es porque primero el colector debe recolectar su dinero."),
-        )
-    );
+    if (mm.user.isSuperuser || mm.user.isStaff) {
+      list.add(const Divider());
+      list.add(
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            subtitle: Text(
+                "-Si no te aparece el dinero no recolectado es porque primero el colector debe recolectar su dinero."),
+          )
+      );
+    }
 
     return list;
   }

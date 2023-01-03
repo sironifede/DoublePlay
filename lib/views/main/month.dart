@@ -34,70 +34,6 @@ class _MonthPageState extends State<MonthPage> {
         hasError = options.hasError;
       });
     }
-    await mm.updateModels(filter:PadlockFilter(playing: true), modelType: ModelType.padlock);
-    for (var model in mm.padlocks){
-      if (model.user == mm.user.id){
-        if (model.playing){
-          mm.selectedPadlock = model;
-          Future.delayed(Duration(milliseconds: 1), () {
-            showDialog(
-                context: context,
-                builder: (_) {
-                  return AlertDialog(
-                    icon: const Icon(Icons.warning),
-                    title: Text("Ya estabas jugando"),
-                    content: Text(
-                        "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
-                    actions: [
-                      TextButton(
-                        child: Text("DESCARTAR"),
-                        onPressed: () {
-                          Navigator.of(context).pop(true);
-                        },
-                      ),
-                      TextButton(
-                        child: Text("SEGUIR JUGANDO"),
-                        onPressed: () async {
-                          mm.newPlay = false;
-                          await mm.updateModels(modelType: ModelType.play, filter:PlayFilter( padlocks: [mm.selectedPadlock!.id]));
-                          for (var play in mm.plays){
-                            if (play.padlock == mm.selectedPadlock!.id){
-                              if (!play.confirmed){
-                                mm.selectedPlay = play;
-                              }else{
-                                mm.selectedPlay = Play(
-                                    id: 0,
-                                    padlock: 0,
-                                    bet: 5,
-                                    confirmed: false,
-                                    dayNumber: 1,
-                                    nightNumber: 1,
-                                    nRandom: 0,
-                                    type: PlayType.JS
-                                );
-                              }
-                            }
-                          }
-                          Navigator.of(context).pop(false);
-                        },
-                      ),
-                    ],
-                  );
-                }).then((value) {
-              if (value != null){
-                if (value){
-                  mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
-                }else{
-                  Navigator.of(context).pushNamed(Routes.play);
-                }
-              }else{
-                mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
-              }
-            });
-          });
-        }
-      }
-    }
   }
   @override
   Widget build(BuildContext context) {
@@ -152,58 +88,58 @@ class _MonthPageState extends State<MonthPage> {
       "Noviembre",
       "Diciembre"
     ];
+
+
+
     DateTime now = DateTime.now();
-    list.add(
-      ListView.builder(
-        shrinkWrap: true,
-        itemCount: 3,
-        itemBuilder: (context, index) {
-          index += now.month -1;
-          if (now.month - 1 > 8) {
-            if (index > 11) {
-              index -= 12;
-            }
-          }
-          Widget button = Center();
-          for (var month in mm.months){
-            if (month.id == index  + 1  ){
-              button = Center(
-                child: ElevatedButton(
-                  child: Text("${months[index]}"),
-                  onPressed: (month.enabled)? () async {
-                    mm.newPlay = true;
-                    mm.selectedPadlock = Padlock(
-                        user: mm.user.id,
-                        playing: true,
-                        month: index + 1,
-                        moneyGenerated: 0,
-                        selled: false,
-                        listerMoneyCollected: false,
-                        collectorMoneyCollected: false,
-                        name: "",
-                        phone: ""
-                    );
-                    print(mm.selectedPadlock!.toUpdateMap());
-                    mm.selectedPlay = Play(
-                        id: 0,
-                        padlock: 0,
-                        bet: 5,
-                        confirmed: false,
-                        dayNumber: 1,
-                        nightNumber: 1,
-                        nRandom: 0,
-                        type: PlayType.JS
-                    );
-                    Navigator.of(context).pushNamed(Routes.play);
-                  }:null,
-                ),
-              );
-            }
-          }
-          return button;
-        },
-      ),
-    );
+    List<int> monthsAdd = [];
+    for (int i = 0 ;i<3;i++){
+      int month = now.month;
+      month += i;
+      if (month > 12){
+        month -= 12;
+      }
+      monthsAdd.add(month);
+    }
+
+    for (var month in mm.months){
+      if(monthsAdd.contains(month.id) || month.enabled) {
+        list.add(
+            Center(
+              child: ElevatedButton(
+                child: Text("${months[month.id - 1]}"),
+                onPressed: () async {
+                  mm.newPlay = true;
+                  mm.selectedPadlock = Padlock(
+                      user: mm.user.id,
+                      playing: true,
+                      month: month.id,
+                      moneyGenerated: 0,
+                      selled: false,
+                      listerMoneyCollected: false,
+                      collectorMoneyCollected: false,
+                      name: "",
+                      phone: ""
+                  );
+                  print(mm.selectedPadlock!.toUpdateMap());
+                  mm.selectedPlay = Play(
+                      id: 0,
+                      padlock: 0,
+                      bet: 5,
+                      confirmed: false,
+                      dayNumber: 1,
+                      nightNumber: 1,
+                      nRandom: 0,
+                      type: PlayType.JS
+                  );
+                  Navigator.of(context).pushNamed(Routes.play);
+                },
+              ),
+            )
+        );
+      }
+    }
+
 
     return list;
   }

@@ -18,6 +18,6 @@ export 'package:bolita_cubana/views/main/generate_ticket.dart';
 export 'package:bolita_cubana/views/main/collectors.dart';
 export 'package:bolita_cubana/views/main/collector.dart';
 export 'package:bolita_cubana/views/main/search_play.dart';
-export 'package:bolita_cubana/views/main/sell_padlocks.dart';
+export 'package:bolita_cubana/views/main/reset_months.dart';
 export 'package:bolita_cubana/views/main/money_generated_month.dart';
 export 'package:bolita_cubana/views/main/enabled_months.dart';

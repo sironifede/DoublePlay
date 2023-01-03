@@ -16,6 +16,7 @@ class _PadlockPageState extends State<PadlockPage> {
   bool loading = false;
   bool navigate = false;
   late ModelsManager mm;
+  final _formKey = GlobalKey<FormState>();
 
   TextEditingController _nameController = TextEditingController();
   TextEditingController _phoneController = TextEditingController();
@@ -97,28 +98,44 @@ class _PadlockPageState extends State<PadlockPage> {
     );
     list.add(Divider());
     list.add(
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: TextField(
-          controller: _nameController,
-          decoration: InputDecoration(
-            labelText: "Nombre",
-            hintText: "Nombre del jugador",
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                TextFormField(
+                    enabled: !loading,
+                    validator:(val){
+                      if(val == null || val == "" ) {
+                        return "Campo obligatorio";
+                      }
+                    },
+                    controller: _nameController,
+                    decoration: InputDecoration(
+                      labelText: "Nombre",
+                      hintText: "Nombre de usuario",
+                      icon: Icon(Icons.person),
+                    )
+                ),
+                TextFormField(
+                    enabled: !loading,
+                    validator:(val){
+                      if(val == null || val == "" ) {
+                        return "Campo obligatorio";
+                      }
+                    },
+                    controller: _phoneController,
+                    decoration: InputDecoration(
+                      labelText: "Telefono",
+                      hintText: "Telefono del jugador",
+                      icon: Icon(Icons.phone),
+                    ),
+                ),
+              ]
+            ),
           ),
-        ),
-      ),
-    );
-    list.add(
-      Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: TextField(
-          controller: _phoneController,
-          decoration: InputDecoration(
-            labelText: "Telefono",
-            hintText: "Telefono del jugador",
-          ),
-        ),
-      ),
+        )
     );
     list.add(Divider());
     list.add(
@@ -130,13 +147,16 @@ class _PadlockPageState extends State<PadlockPage> {
               padding: const EdgeInsets.all(8.0),
               child: ElevatedButton(
                   onPressed: (){
-                    mm.selectedPadlock!.name = _nameController.text;
-                    mm.selectedPadlock!.phone = _phoneController.text;
-                    mm.updateModel(modelType: ModelType.padlock,model: mm.selectedPadlock!).then((value) {
-                      setState(() {
-                        navigate = true;
+                    if (_formKey.currentState!.validate()) {
+                      mm.selectedPadlock!.name = _nameController.text;
+                      mm.selectedPadlock!.phone = _phoneController.text;
+                      mm.updateModel(modelType: ModelType.padlock, model: mm.selectedPadlock!)
+                          .then((value) {
+                        setState(() {
+                          navigate = true;
+                        });
                       });
-                    });
+                    }
                   },
                   child: Text("GENERAR TICKET")
               ),

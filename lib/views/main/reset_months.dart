@@ -7,13 +7,13 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../models/models_manager.dart';
 
-class SellPadlocksPage extends StatefulWidget {
-  const SellPadlocksPage({Key? key,}): super(key: key);
+class ResetMonthsPage extends StatefulWidget {
+  const ResetMonthsPage({Key? key,}): super(key: key);
   @override
-  _SellPadlocksPageState createState() => _SellPadlocksPageState();
+  _ResetMonthsPageState createState() => _ResetMonthsPageState();
 }
 
-class _SellPadlocksPageState extends State<SellPadlocksPage> {
+class _ResetMonthsPageState extends State<ResetMonthsPage> {
   bool loading = false;
   late ModelsManager mm;
   int month = 0;
@@ -29,7 +29,7 @@ class _SellPadlocksPageState extends State<SellPadlocksPage> {
     });
   }
   Future<void> _refresh() async {
-    mm.updateModels(modelType: ModelType.padlock, filter: PadlockFilter(month: (month + 1).toString()));
+    mm.updateModels(modelType: ModelType.padlock, filter: PadlockFilter(month: (month + 1).toString(),selled: false));
   }
   @override
   Widget build(BuildContext context) {
@@ -40,27 +40,7 @@ class _SellPadlocksPageState extends State<SellPadlocksPage> {
       length: 2,
       child: Scaffold(
         appBar: AppBar(
-          actions: [
-            DropdownButton<String>(
-              value: months[month],
-              onChanged: (String? value) async {
-                for (int i = 0; i < months.length; i++) {
-                  if (months[i] == value) {
-                    month = i;
-                    _refresh();
-                    break;
-                  }
-                }
-              },
-              items: months.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ],
-          title: const Text(""),
+          title: const Text("Resetear mes"),
         ),
         body:RefreshIndicator(
           onRefresh: _refresh,
@@ -87,18 +67,42 @@ class _SellPadlocksPageState extends State<SellPadlocksPage> {
     }
 
     list.add(
-        ListTile(
-          title: Text("Vender todos los numeros"),
-          subtitle: Text("Dinero total: ${moneyGenerated}"),
-        )
+      ListTile(
+        title: Text("Elegir mes:"),
+        trailing: DropdownButton<String>(
+          value: months[month],
+          onChanged: (String? value) async {
+            for (int i = 0; i < months.length; i++) {
+              if (months[i] == value) {
+                month = i;
+                _refresh();
+                break;
+              }
+            }
+          },
+          items: months.map<DropdownMenuItem<String>>((String value) {
+            return DropdownMenuItem<String>(
+              value: value,
+              child: Text(value),
+            );
+          }).toList(),
+        ),
+      )
     );
+    list.add(Divider());
+    bool alreadyReset = true;
+    for (var padlock in mm.padlocks){
+      if (padlock.month == month +1 && !padlock.selled){
+        alreadyReset = false;
+        break;
+      }
+    }
     list.add(
         Row(
           children: [
             Expanded(child: Text("")),
-            ElevatedButton.icon(
-              icon:Icon(Icons.auto_graph),
-                onPressed: (){
+            ElevatedButton(
+                onPressed: (alreadyReset)?null:  (){
                   for (var padlock in mm.padlocks){
                     if (padlock.month == month +1 && !padlock.selled){
                       padlock.selled = true;
@@ -106,12 +110,23 @@ class _SellPadlocksPageState extends State<SellPadlocksPage> {
                     }
                   }
                 },
-                label: Text("Vender todos los numeros")
+                child: Text("RESETEAR")
             ),
             Expanded(child: Text("")),
           ],
         )
     );
+    if(alreadyReset){
+      list.add(Divider());
+      list.add(
+          ListTile(
+            leading: Icon(Icons.info),
+
+            subtitle: Text("-Ya se resetearon todas las jugadas.\n"),
+          )
+      );
+    }
+
 
 
     return list;

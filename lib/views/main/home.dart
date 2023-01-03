@@ -128,72 +128,7 @@ class _HomePageState extends State<HomePage> {
         }
       }
 
-      if (!mm.user.isCollector ) {
-        await mm.updateModels(filter:PadlockFilter(playing: true, users: [mm.user.id]), modelType: ModelType.padlock);
-        for (var model in mm.padlocks){
-          if (model.user == mm.user.id){
-            if (model.playing){
-              mm.selectedPadlock = model;
-              Future.delayed(Duration(milliseconds: 1), () {
-                showDialog(
-                    context: context,
-                    builder: (_) {
-                      return AlertDialog(
-                        icon: const Icon(Icons.warning),
-                        title: Text("Ya estabas jugando"),
-                        content: Text(
-                            "Nunca terminaste tu anterior jugada, puedes volver a donde te habias quedado o descartarla."),
-                        actions: [
-                          TextButton(
-                            child: Text("DESCARTAR"),
-                            onPressed: () {
-                              Navigator.of(context).pop(true);
-                            },
-                          ),
-                          TextButton(
-                            child: Text("SEGUIR JUGANDO"),
-                            onPressed: () async {
-                              mm.newPlay = false;
-                              await mm.updateModels(modelType: ModelType.play, filter:PlayFilter( padlocks: [mm.selectedPadlock!.id]));
-                              for (var play in mm.plays){
-                                if (play.padlock == mm.selectedPadlock!.id){
-                                  if (!play.confirmed){
-                                    mm.selectedPlay = play;
-                                  }else{
-                                    mm.selectedPlay = Play(
-                                        id: 0,
-                                        padlock: 0,
-                                        bet: 5,
-                                        confirmed: false,
-                                        dayNumber: 1,
-                                        nightNumber: 1,
-                                        nRandom: 0,
-                                        type: PlayType.JS
-                                    );
-                                  }
-                                }
-                              }
-                              Navigator.of(context).pop(false);
-                            },
-                          ),
-                        ],
-                      );
-                    }).then((value) {
-                  if (value != null){
-                    if (value){
-                      mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
-                    }else{
-                      Navigator.of(context).pushNamed(Routes.play);
-                    }
-                  }else{
-                    mm.removeModel(modelType:ModelType.padlock,model: mm.selectedPadlock!);
-                  }
-                });
-              });
-            }
-          }
-        }
-      }
+
       Future.delayed(Duration(seconds: 1),(){
         if (options != null){
           if (hasError != options!.hasError){
@@ -301,7 +236,7 @@ class _HomePageState extends State<HomePage> {
             onPressed: (mm.status == ModelsStatus.updating)? null : () {
               Navigator.of(context).pushNamed(Routes.searchPlay);
             },
-            text: "Ingresar Jugada",
+            text: "Buscar Jugada",
             backgroundImage: "assets/images/ruleta.png",
           )
       );
@@ -310,19 +245,11 @@ class _HomePageState extends State<HomePage> {
             onPressed: (mm.status == ModelsStatus.updating)? null : () {
               Navigator.of(context).pushNamed(Routes.sellPadlock);
             },
-            text: "Vender numeros",
-            backgroundImage: "assets/images/sell.png",
+            text: "Resetear Meses",
+            backgroundImage: "assets/images/calendar.png",
           )
       );
-      list.add(
-          OptionWidget(
-            onPressed: (mm.status == ModelsStatus.updating)? null : () {
-              Navigator.of(context).pushNamed(Routes.moneyGenerated);
-            },
-            text: "Dinero generado",
-            backgroundImage: "assets/images/stonks.png",
-          )
-      );
+
       list.add(
           OptionWidget(
             onPressed: (mm.status == ModelsStatus.updating)? null : () {
@@ -330,6 +257,17 @@ class _HomePageState extends State<HomePage> {
             },
             text: "Meses habilitados",
             backgroundImage: "assets/images/calendar.png",
+          )
+      );
+    }
+    if (mm.user.isSuperuser){
+      list.add(
+          OptionWidget(
+            onPressed: (mm.status == ModelsStatus.updating)? null : () {
+              Navigator.of(context).pushNamed(Routes.moneyGenerated);
+            },
+            text: "Dinero generado",
+            backgroundImage: "assets/images/stonks.png",
           )
       );
     }

@@ -23,7 +23,7 @@ class RouteGenerator {
       case Routes.month:
         return MaterialPageRoute(builder: (_) => const MonthPage());
       case Routes.sellPadlock:
-        return MaterialPageRoute(builder: (_) => const SellPadlocksPage());
+        return MaterialPageRoute(builder: (_) => const ResetMonthsPage());
       case Routes.moneyGenerated:
         return MaterialPageRoute(builder: (_) => const MoneyGeneratedInMonthPage());
       case Routes.login:
